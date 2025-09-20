@@ -1,0 +1,5 @@
+depot/
+node_modules/
+*.manifest
+*.json
+*.auditfile
