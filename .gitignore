@@ -2,5 +2,5 @@ depot/
 install/
 node_modules/
 *.manifest
-*.json
-*.auditfile
+*.manifest.json
+*.manifest.auditfile

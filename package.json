@@ -2,6 +2,7 @@
   "dependencies": {
     "@doctormckay/steam-crypto": "^1.2.0",
     "adm-zip": "^0.5.16",
+    "parse-torrent": "^11.0.18",
     "steam-user": "^5.2.3"
   }
 }
