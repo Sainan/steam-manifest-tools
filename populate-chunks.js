@@ -3,7 +3,6 @@ const fs = require("fs");
 const fsPromises = require("fs/promises");
 const path = require("path");
 const AdmZip = require("adm-zip");
-const CdnCompression = require("steam-user/components/cdn_compression");
 const SteamCrypto = require("@doctormckay/steam-crypto");
 
 const sha1 = (data) => crypto.createHash("sha1").update(data).digest("hex");
