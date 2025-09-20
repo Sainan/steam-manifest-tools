@@ -1,4 +1,5 @@
 depot/
+install/
 node_modules/
 *.manifest
 *.json

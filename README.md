@@ -1,6 +1,7 @@
 Scripts to interact with Steam manifest files.
 - `node download-chunks.js <manifest file>` (basically the same as prefilling a LAN cache)
 - `node populate-chunks.js <depot id> <depot key> <install dir>` (can also be used to prefill a LAN cache, tho compression is not as good as Steam's)
+- `node install.js <manifest file> <depot key>` (requires chunks to have been populated and/or downloaded beforehand)
 - `node to-json.js <manifest file> [depot key]`
 - `node to-hashdeep-auditfile.js <manifest file> [depot key]`
   - Note that hashdeep requires exact path matches and this script makes a few assumptions
