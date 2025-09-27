@@ -68,10 +68,14 @@ const data = fs.readFileSync(manifestFile);
 			}
 			const chunks = await Promise.all(chunkPromises);
 			(async () => {
+				const st = crypto.createHash("sha1");
+				for (const chunk of chunks) {
+					st.update(chunk);
+				}
 				const data = Buffer.concat(chunks);
 				await fsPromises.mkdir(path.dirname(`install/${manifest.depot_id}/${manifest.gid_manifest}/${file.filename}`), { recursive: true });
 				await fsPromises.writeFile(`install/${manifest.depot_id}/${manifest.gid_manifest}/${file.filename}`, data);
-				if (sha1(data) == file.sha_content) {
+				if (st.digest("hex") == file.sha_content) {
 					console.log(`install/${manifest.depot_id}/${manifest.gid_manifest}/${file.filename}: Created`);
 				} else {
 					console.log(`install/${manifest.depot_id}/${manifest.gid_manifest}/${file.filename}: Created; HASH MISMATCHES`);
