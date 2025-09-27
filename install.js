@@ -1,7 +1,7 @@
 const manifestFile = process.argv[2];
 let depotKey = process.argv[3];
-if (!manifestFile || !depotKey) {
-	console.log("Syntax: node install.js <manifest file> <depot key>");
+if (!manifestFile) {
+	console.log("Syntax: node install.js <manifest file> [depot key]");
 	process.exit(1);
 }
 
@@ -47,10 +47,13 @@ const getChunk = async (depotId, depotKey, hash) => {
 	return chunksInMemory[hash];
 };
 
-depotKey = Buffer.from(depotKey, "hex");
 const data = fs.readFileSync(manifestFile);
 (async () => {
 	const manifest = ContentManifest.parse(data);
+	if (!depotKey) {
+		depotKey = await require("./include/fetch-depot-key.js")(manifest.depot_id);
+	}
+	depotKey = Buffer.from(depotKey, "hex");
 	ContentManifest.decryptFilenames(manifest, depotKey);
 	fs.mkdirSync(`install/${manifest.depot_id}/${manifest.gid_manifest}`, { recursive: true });
 	for (const file of manifest.files) {

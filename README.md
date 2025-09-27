@@ -5,7 +5,7 @@ Scripts to interact with Steam manifest files.
 - `node lancache.js`
   - Must run as root to obtain port 80
   - `lancache.steamcontent.com` must resolve to your LAN cache server IP (either via custom DNS server or OS hosts file)
-- `node install.js <manifest file> <depot key>` (requires chunks to have been populated and/or downloaded beforehand)
+- `node install.js <manifest file> [depot key]` (requires chunks to have been populated and/or downloaded beforehand)
 - `node to-json.js <manifest file> [depot key]`
 - `node to-hashdeep-auditfile.js <manifest file> [depot key]`
   - Note that hashdeep requires exact path matches and this script makes a few assumptions
