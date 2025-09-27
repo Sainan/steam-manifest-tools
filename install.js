@@ -37,6 +37,7 @@ const getChunk = async (depotId, depotKey, hash) => {
 					break;
 				}
 				if (e.code != "EMFILE") {
+					console.log(`Error reading depot/${depotId}/chunk/${hash}`);
 					throw e;
 				}
 				await sleep(500);
