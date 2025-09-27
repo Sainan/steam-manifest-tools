@@ -2,7 +2,18 @@ const fs = require("fs");
 const fsPromises = require("fs/promises");
 const ContentManifest = require("steam-user/components/content_manifest");
 
-const hosts = [
+let manifestFile = process.argv[2];
+let lancache = (process.argv[3] == "--lancache");
+if (manifestFile == "--lancache") {
+	lancache = true;
+	manifestFile = process.argv[3];
+}
+if (!manifestFile) {
+	console.log("Syntax: node download-chunks.js <manifest file> [--lancache]");
+	process.exit(1);
+}
+
+const hosts = lancache ? ["http://lancache.steamcontent.com"] : [
 	"https://cache8-sto1.steamcontent.com",
 	"https://cache6-sto1.steamcontent.com",
 	"https://cache1-sto1.steamcontent.com",
@@ -25,11 +36,6 @@ const hosts = [
 	"https://google2.cdn.steampipe.steamcontent.com",
 ];
 
-const manifestFile = process.argv[2];
-if (!manifestFile) {
-	console.log("Syntax: node download-chunks.js <manifest file>");
-	process.exit(1);
-}
 const data = fs.readFileSync(manifestFile);
 const manifest = ContentManifest.parse(data);
 fs.mkdirSync(`depot/${manifest.depot_id}/chunk`, { recursive: true });
