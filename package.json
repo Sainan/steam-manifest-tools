@@ -4,12 +4,12 @@
   "main": "include/lib.js",
   "dependencies": {
     "@doctormckay/steam-crypto": "^1.2.0",
-    "adm-zip": "^0.5.16"
+    "adm-zip": "^0.5.16",
+    "steam-user": "^5.2.3"
   },
   "devDependencies": {
     "express": "^5.1.0",
     "parse-torrent": "^11.0.18",
-    "sni": "^1.0.0",
-    "steam-user": "^5.2.3"
+    "sni": "^1.0.0"
   }
 }

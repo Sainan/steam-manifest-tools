@@ -1,7 +1,7 @@
 Scripts to interact with Steam manifest files.
 - `node download-manifest.js <depot id> <manifest id>`
 - `node download-chunks.js <manifest file> [--lancache]` (basically the same as prefilling a LAN cache, optionally downloads from a LAN cache)
-- `node populate-chunks.js <depot id> <depot key> <install dir>` (can also be used to prefill a LAN cache, tho compression is not as good as Steam's)
+- `node populate-chunks.js <manifest file> <install dir> [depot key]` (can also be used to prefill a LAN cache, tho compression is not as good as Steam's)
 - `node lancache.js`
   - Must run as root to obtain port 80
   - `lancache.steamcontent.com` must resolve to your LAN cache server IP (either via custom DNS server or OS hosts file)

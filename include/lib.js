@@ -3,6 +3,7 @@ const fs = require("fs");
 const fsPromises = require("fs/promises");
 const path = require("path");
 const AdmZip = require("adm-zip");
+const ContentManifest = require("steam-user/components/content_manifest");
 const SteamCrypto = require("@doctormckay/steam-crypto");
 
 const sha1 = (data) => crypto.createHash("sha1").update(data).digest("hex");
@@ -25,26 +26,37 @@ const getFiles = async (dir) => {
 
 module.exports = {
 	getFiles,
-	populateChunks: async (depotId, depotKey, installDir, onProgress) => {
-		const files = await getFiles(installDir);
+	populateChunks: async (manifest, depotKey, installDir, onProgress) => {
+		if (manifest.filenames_encrypted) {
+			ContentManifest.decryptFilenames(manifest, depotKey);
+		}
+		fs.mkdirSync(`depot/${manifest.depot_id}/chunk`, { recursive: true });
 		let file_i = 0;
-		fs.mkdirSync(`depot/${depotId}/chunk`, { recursive: true });
-		for (const file of files) {
-			if (onProgress) {
-				onProgress(file, file_i, files.length, 0);
+		for (const file of manifest.files) {
+			if (file.flags & 64) {
+				continue;
 			}
-			const readStream = fs.createReadStream(file, { highWaterMark: 1048576 });
-			let chunk_i = 0;
-			for await (let chunk of readStream) {
-				const sha = sha1(chunk);
-				if (!fs.existsSync(`depot/${depotId}/chunk/${sha}`)) {
-					chunk = compress(chunk);
-					chunk = SteamCrypto.symmetricEncrypt(chunk, depotKey);
-					await fsPromises.writeFile(`depot/${depotId}/chunk/${sha}`, chunk);
-					if (onProgress) {
-						onProgress(file, file_i, files.length, chunk_i++);
+			if (fs.existsSync(path.join(installDir, file.filename))) {
+				const readSteam = await fsPromises.open(path.join(installDir, file.filename), "r");
+				let chunk_i = 0;
+				for (const chunk of file.chunks) {
+					if (!fs.existsSync(`depot/${manifest.depot_id}/chunk/${chunk.sha}`)) {
+						let chunkBuf = Buffer.alloc(chunk.cb_original);
+						const { bytesRead } = await readSteam.read(chunkBuf, 0, chunk.cb_original, parseInt(chunk.offset));
+						if (bytesRead != chunk.cb_original) {
+							break;
+						}
+						if (sha1(chunkBuf) == chunk.sha) {
+							chunkBuf = compress(chunkBuf);
+							chunkBuf = SteamCrypto.symmetricEncrypt(chunkBuf, depotKey);
+							await fsPromises.writeFile(`depot/${manifest.depot_id}/chunk/${chunk.sha}`, chunkBuf);
+							if (onProgress) {
+								onProgress(file.filename, file_i, manifest.files.length, chunk_i++, file.chunks.length);
+							}
+						}
 					}
 				}
+				await readSteam.close();
 			}
 			++file_i;
 		}
