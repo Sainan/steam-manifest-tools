@@ -24,20 +24,29 @@ const getFiles = async (dir) => {
 };
 
 module.exports = {
-	populateChunks: async (depotId, depotKey, installDir) => {
+	populateChunks: async (depotId, depotKey, installDir, onProgress) => {
 		depotKey = Buffer.from(depotKey, "hex");
 		const files = await getFiles(installDir);
+		let file_i = 0;
 		fs.mkdirSync(`depot/${depotId}/chunk`, { recursive: true });
 		for (const file of files) {
+			if (onProgress) {
+				onProgress(file, file_i, files.length, 0);
+			}
 			const readStream = fs.createReadStream(file, { highWaterMark: 1048576 });
+			let chunk_i = 0;
 			for await (let chunk of readStream) {
 				const sha = sha1(chunk);
 				if (!fs.existsSync(`depot/${depotId}/chunk/${sha}`)) {
 					chunk = compress(chunk);
 					chunk = SteamCrypto.symmetricEncrypt(chunk, depotKey);
 					await fsPromises.writeFile(`depot/${depotId}/chunk/${sha}`, chunk);
+					if (onProgress) {
+						onProgress(file, file_i, files.length, chunk_i++);
+					}
 				}
 			}
+			++file_i;
 		}
 	},
 };
