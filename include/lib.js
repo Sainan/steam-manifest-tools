@@ -24,6 +24,7 @@ const getFiles = async (dir) => {
 };
 
 module.exports = {
+	getFiles,
 	populateChunks: async (depotId, depotKey, installDir, onProgress) => {
 		depotKey = Buffer.from(depotKey, "hex");
 		const files = await getFiles(installDir);
