@@ -34,10 +34,8 @@ depotKey = Buffer.from(depotKey, "hex");
 getFiles(installDir).then(async files => {
 	fs.mkdirSync(`depot/${depotId}/chunk`, { recursive: true });
 	for (const file of files) {
-		const data = await fsPromises.readFile(file);
-		for (let offset = 0; offset < data.length; offset += 1048576) {
-			const end = Math.min(offset + 1048576, data.length);
-			let chunk = data.subarray(offset, end);
+		const readStream = fs.createReadStream(file, { highWaterMark: 1048576 });
+		for await (let chunk of readStream) {
 			const sha = sha1(chunk);
 			if (!fs.existsSync(`depot/${depotId}/chunk/${sha}`)) {
 				chunk = compress(chunk);
