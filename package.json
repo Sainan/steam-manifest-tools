@@ -9,6 +9,7 @@
   "devDependencies": {
     "express": "^5.1.0",
     "parse-torrent": "^11.0.18",
+    "sni": "^1.0.0",
     "steam-user": "^5.2.3"
   }
 }
