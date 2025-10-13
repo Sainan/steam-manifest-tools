@@ -10,7 +10,6 @@ if (!manifestFile) {
 }
 
 const fs = require("fs");
-const fsPromises = require("fs/promises");
 const ContentManifest = require("steam-user/components/content_manifest");
 const { DEFAULT_HOSTS, downloadChunks } = require(".");
 
