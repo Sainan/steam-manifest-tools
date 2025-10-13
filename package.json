@@ -2,6 +2,10 @@
   "name": "steam-manifest-tools",
   "version": "0.1.1",
   "main": "include/lib.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sainan/steam-manifest-tools.git"
+  },
   "dependencies": {
     "@doctormckay/steam-crypto": "^1.2.0",
     "adm-zip": "^0.5.16",
