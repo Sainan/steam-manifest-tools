@@ -220,14 +220,12 @@ module.exports = {
 				}
 				file.chunks.sort((a, b) => a.offset - b.offset);
 
-				const chunkPromises = [];
-				for (const chunk of file.chunks) {
-					chunkPromises.push(getChunk(manifest.depot_id, depotKey, chunk.sha));
-				}
-				const chunks = await Promise.all(chunkPromises);
-				const data = Buffer.concat(chunks);
 				await fsPromises.mkdir(path.dirname(path.join(installDir, file.filename)), { recursive: true });
-				await fsPromises.writeFile(path.join(installDir, file.filename), data);
+				const writeStream = await fsPromises.open(path.join(installDir, file.filename), "w");
+				for (const chunk of file.chunks) {
+					await writeStream.write(await getChunk(manifest.depot_id, depotKey, chunk.sha));
+				}
+				await writeStream.close();
 				if (onFileWritten) {
 					onFileWritten(file.filename, exists);
 				}
