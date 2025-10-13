@@ -7,12 +7,12 @@ if (!manifestFile) {
 
 const fs = require("fs");
 const ContentManifest = require("steam-user/components/content_manifest");
-const { install }  = require(".");
+const { fetchDepotKey, install }  = require(".");
 
 (async () => {
 	const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
 	if (!depotKey) {
-		depotKey = await require("./include/fetch-depot-key.js")(manifest.depot_id);
+		depotKey = await fetchDepotKey(manifest.depot_id);
 	}
 	depotKey = Buffer.from(depotKey, "hex");
 	await install(manifest, depotKey, undefined, (file, existed) => {

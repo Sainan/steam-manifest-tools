@@ -15,7 +15,8 @@ if (!file) {
 	if (manifest.filenames_encrypted) {
 		if (!depotKey) {
 			console.log("Manifest has encrypted filenames. A depot key will be needed.");
-			depotKey = await require("./include/fetch-depot-key.js")(manifest.depot_id);
+			const { fetchDepotKey } = require(".");
+			depotKey = await fetchDepotKey(manifest.depot_id);
 		}
 		ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex"));
 	}
