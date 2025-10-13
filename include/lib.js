@@ -24,6 +24,29 @@ const getFiles = async (dir) => {
 	return Array.prototype.concat(...files);
 };
 
+const DEFAULT_HOSTS = [
+	"https://cache8-sto1.steamcontent.com",
+	"https://cache6-sto1.steamcontent.com",
+	"https://cache1-sto1.steamcontent.com",
+	"https://cache2-sto1.steamcontent.com",
+	"https://cache3-sto1.steamcontent.com",
+	"https://cache7-sto1.steamcontent.com",
+	"https://cache2-sto2.steamcontent.com",
+	"https://cache6-sto2.steamcontent.com",
+	"https://cache1-sto2.steamcontent.com",
+	"https://cache9-sto1.steamcontent.com",
+	"https://cache4-sto2.steamcontent.com",
+	"https://cache4-sto1.steamcontent.com",
+	"https://cache5-sto1.steamcontent.com",
+	"https://cache3-sto2.steamcontent.com",
+	"https://cache5-sto2.steamcontent.com",
+	"http://alibaba.cdn.steampipe.steamcontent.com",
+	"http://edgenext.cdn.steampipe.steamcontent.com",
+	"https://steampipe.akamaized.net",
+	"https://fastly.cdn.steampipe.steamcontent.com",
+	"https://google2.cdn.steampipe.steamcontent.com",
+];
+
 module.exports = {
 	getFiles,
 	populateChunks: async (manifest, depotKey, installDir, onProgress) => {
@@ -60,5 +83,67 @@ module.exports = {
 			}
 			++file_i;
 		}
+	},
+	DEFAULT_HOSTS,
+	downloadChunks: (manifest, onStartDownloading, onStartDownload, onFinishDownload, onErroredDownload, hosts) => {
+		hosts ??= DEFAULT_HOSTS;
+		return new Promise(resolve => {
+			fs.mkdirSync(`depot/${manifest.depot_id}/chunk`, { recursive: true });
+			const toDownload = {};
+			for (const file of manifest.files) {
+				for (const chunk of file.chunks) {
+					if (!fs.existsSync(`depot/${manifest.depot_id}/chunk/${chunk.sha}`)) {
+						toDownload[`depot/${manifest.depot_id}/chunk/${chunk.sha}`] = true;
+					}
+				}
+			}
+			let remaining_chunks = Object.keys(toDownload).length;
+			if (onStartDownloading) {
+				onStartDownloading(remaining_chunks);
+			}
+			if (remaining_chunks == 0) {
+				resolve();
+			}
+			let /*host_i = 0,*/ running = 0;
+			const loop = () => {
+				while (running < 4) {
+					const path = Object.keys(toDownload)[0];
+					if (!path) {
+						break;
+					}
+					++running;
+					delete toDownload[path];
+					const host = hosts[Math.floor(Math.random()*hosts.length)];
+					//const host = hosts[host_i]; host_i = (host_i + 1) % hosts.length;
+					if (onStartDownload) {
+						onStartDownload(path, host);
+					}
+					fetch(`${host}/${path}`).then(async res => {
+						if (onFinishDownload) {
+							onFinishDownload(path, res.status, host);
+						}
+						if (res.status == 200) {
+							const ab = await res.arrayBuffer();
+							await fsPromises.writeFile(path, Buffer.from(ab));
+							if (--remaining_chunks == 0) {
+								resolve();
+							}
+						}
+						else {
+							toDownload[path] = true;
+						}
+					}).catch(err => {
+						if (onErroredDownload) {
+							onErroredDownload(path, err);
+						}
+						toDownload[path] = true;
+					}).finally(() => {
+						--running;
+						loop();
+					});
+				}
+			};
+			loop();
+		});
 	},
 };
