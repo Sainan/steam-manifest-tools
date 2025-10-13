@@ -11,3 +11,4 @@ Scripts to interact with Steam manifest files.
   - Note that hashdeep requires exact path matches and this script makes a few assumptions
   - Example verification usage: `hashdeep -a -l -v -v -k 241561_8497448424664183398.manifest.auditfile -r 8497448424664183398`
 - `node to-torrent.js <manifest file> <file hash>`
+- `node verify-chunks.js <depot id> [depot key]`

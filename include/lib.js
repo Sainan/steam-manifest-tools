@@ -59,26 +59,36 @@ const getFiles = async (dir) => {
 	return Array.prototype.concat(...files);
 };
 
-const getChunk = async (depotId, depotKey, hash) => {
+const getFileContents = async (file) => {
 	while (true) {
 		try {
-			let data = await fsPromises.readFile(`depot/${depotId}/chunk/${hash}`);
-			data = SteamCrypto.symmetricDecrypt(data, depotKey);
-			data = await CdnCompression.unzip(data);
-			if (sha1(data) != hash) {
-				throw new Error(`depot/${depotId}/chunk/${hash} does not match the expected hash`);
-			}
-			return data;
-		} catch (e) {
-			if (e.code == "ENOENT") {
-				throw new Error(`depot/${depotId}/chunk/${hash} is missing`);
-			}
+			return await fsPromises.readFile(file);
+		}
+		catch (e) {
 			if (e.code != "EMFILE") {
-				//console.log(`Error reading depot/${depotId}/chunk/${hash}`);
+				//console.log(`Error reading ${file}`);
 				throw e;
 			}
 			await sleep(500);
 		}
+	}
+};
+
+const getChunk = async (depotId, depotKey, hash) => {
+	try {
+		let data = await getFileContents(`depot/${depotId}/chunk/${hash}`);
+		data = SteamCrypto.symmetricDecrypt(data, depotKey);
+		data = await CdnCompression.unzip(data);
+		if (sha1(data) != hash) {
+			throw new Error(`depot/${depotId}/chunk/${hash} does not match the expected hash`);
+		}
+		return data;
+	}
+	catch (e) {
+		if (e.code == "ENOENT") {
+			throw new Error(`depot/${depotId}/chunk/${hash} is missing`);
+		}
+		throw e;
 	}
 };
 
@@ -88,6 +98,7 @@ module.exports = {
 	sha1file,
 	compress,
 	getFiles,
+	getFileContents,
 	getChunk,
 	fetchDepotKey: async (depotId) => {
 		console.log(`Depot key was not supplied, attempting to fetch it...`);
@@ -222,5 +233,28 @@ module.exports = {
 				}
 			}
 		}
+	},
+	verifyChunks: async (depotId, depotKey, onDeletedFile) => {
+		const files = await getFiles(`depot/${depotId}/chunk`);
+		const promises = [];
+		for (const file of files) {
+			const hash = file.substr(file.length - 40);
+			promises.push(getFileContents(file).then(async data => {
+				try {
+					data = SteamCrypto.symmetricDecrypt(data, depotKey);
+					data = await CdnCompression.unzip(data);
+					if (sha1(data) == hash) {
+						return;
+					}
+				}
+				catch (e) {
+				}
+				await fsPromises.unlink(file);
+				if (onDeletedFile) {
+					onDeletedFile(file, hash);
+				}
+			}));
+		}
+		await Promise.all(promises);
 	},
 };
