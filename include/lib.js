@@ -122,6 +122,7 @@ module.exports = {
 			if (fs.existsSync(path.join(installDir, file.filename))) {
 				const readSteam = await fsPromises.open(path.join(installDir, file.filename), "r");
 				let chunk_i = 0;
+				const writePromises = [];
 				for (const chunk of file.chunks) {
 					if (!fs.existsSync(`depot/${manifest.depot_id}/chunk/${chunk.sha}`)) {
 						let chunkBuf = Buffer.alloc(chunk.cb_original);
@@ -132,14 +133,18 @@ module.exports = {
 						if (sha1(chunkBuf) == chunk.sha) {
 							chunkBuf = compress(chunkBuf);
 							chunkBuf = SteamCrypto.symmetricEncrypt(chunkBuf, depotKey);
-							await fsPromises.writeFile(`depot/${manifest.depot_id}/chunk/${chunk.sha}`, chunkBuf);
+							const writePromise = fsPromises.writeFile(`depot/${manifest.depot_id}/chunk/${chunk.sha}`, chunkBuf);
 							if (onProgress) {
-								onProgress(file.filename, file_i, manifest.files.length, chunk_i++, file.chunks.length);
+								writePromise.then(() => {
+									onProgress(file.filename, file_i, manifest.files.length, chunk_i++, file.chunks.length)
+								});
 							}
+							writePromises.push(writePromise);
 						}
 					}
 				}
 				await readSteam.close();
+				await Promise.all(writePromises);
 			}
 			++file_i;
 		}
