@@ -164,8 +164,9 @@ module.exports = {
 				resolve();
 			}
 			let /*host_i = 0,*/ running = 0;
+			const concurrency = hosts.length == 1 ? 4 : (hosts.length * 2);
 			const loop = () => {
-				while (running < 4) {
+				while (running < concurrency) {
 					const path = Object.keys(toDownload)[0];
 					if (!path) {
 						break;
