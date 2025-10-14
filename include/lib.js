@@ -216,29 +216,33 @@ module.exports = {
 		ContentManifest.decryptFilenames(manifest, depotKey);
 		installDir ??= `install/${manifest.depot_id}/${manifest.gid_manifest}`;
 		fs.mkdirSync(installDir, { recursive: true });
+		const promises = [];
 		for (const file of manifest.files) {
 			if (file.flags & 64) {
 				continue;
 			}
-			const filename = file.filename.replace(/\\/g, "/");
-			const exists = fs.existsSync(path.join(installDir, filename));
-			if (!exists || await sha1file(path.join(installDir, filename)) != file.sha_content) {
-				for (const chunk of file.chunks) {
-					chunk.offset = parseInt(chunk.offset);
-				}
-				file.chunks.sort((a, b) => a.offset - b.offset);
+			promises.push((async () => {
+				const filename = file.filename.replace(/\\/g, "/");
+				const exists = fs.existsSync(path.join(installDir, filename));
+				if (!exists || await sha1file(path.join(installDir, filename)) != file.sha_content) {
+					for (const chunk of file.chunks) {
+						chunk.offset = parseInt(chunk.offset);
+					}
+					file.chunks.sort((a, b) => a.offset - b.offset);
 
-				await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
-				const writeStream = await fsPromises.open(path.join(installDir, filename), "w");
-				for (const chunk of file.chunks) {
-					await writeStream.write(await getChunk(manifest.depot_id, depotKey, chunk.sha));
+					await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
+					const writeStream = await fsPromises.open(path.join(installDir, filename), "w");
+					for (const chunk of file.chunks) {
+						await writeStream.write(await getChunk(manifest.depot_id, depotKey, chunk.sha));
+					}
+					await writeStream.close();
+					if (onFileWritten) {
+						onFileWritten(filename, exists);
+					}
 				}
-				await writeStream.close();
-				if (onFileWritten) {
-					onFileWritten(filename, exists);
-				}
-			}
+			})());
 		}
+		await Promise.all(promises);
 	},
 	verifyChunks: async (depotId, depotKey, onDeletedFile) => {
 		const files = await getFiles(`depot/${depotId}/chunk`);
