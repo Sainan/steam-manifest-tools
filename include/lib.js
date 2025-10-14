@@ -119,8 +119,9 @@ module.exports = {
 			if (file.flags & 64) {
 				continue;
 			}
-			if (fs.existsSync(path.join(installDir, file.filename))) {
-				const readSteam = await fsPromises.open(path.join(installDir, file.filename), "r");
+			const filename = file.filename.replace(/\\/g, "/");
+			if (fs.existsSync(path.join(installDir, filename))) {
+				const readSteam = await fsPromises.open(path.join(installDir, filename), "r");
 				let chunk_i = 0;
 				const writePromises = [];
 				for (const chunk of file.chunks) {
@@ -136,7 +137,7 @@ module.exports = {
 							const writePromise = fsPromises.writeFile(`depot/${manifest.depot_id}/chunk/${chunk.sha}`, chunkBuf);
 							if (onProgress) {
 								writePromise.then(() => {
-									onProgress(file.filename, file_i, manifest.files.length, chunk_i++, file.chunks.length)
+									onProgress(filename, file_i, manifest.files.length, chunk_i++, file.chunks.length)
 								});
 							}
 							writePromises.push(writePromise);
