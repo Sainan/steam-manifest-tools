@@ -242,9 +242,13 @@ module.exports = {
 	},
 	verifyChunks: async (depotId, depotKey, onDeletedFile) => {
 		const files = await getFiles(`depot/${depotId}/chunk`);
-		const promises = [];
+		let promises = [];
 		for (const file of files) {
 			const hash = file.substr(file.length - 40);
+			if (promises.length > 40) {
+				await Promise.all(promises);
+				promises = [];
+			}
 			promises.push(getFileContents(file).then(async data => {
 				try {
 					data = SteamCrypto.symmetricDecrypt(data, depotKey);
