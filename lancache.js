@@ -48,6 +48,9 @@ app.listen(80, () => {
 net.createServer(socket => {
 	socket.once("data", firstPacket => {
 		const hostname = sni(firstPacket);
+		if (!hostname) {
+			return;
+		}
 		console.log(`${socket.remoteAddress} - Starting TLS proxy to ${hostname}`);
 		const upstream = net.connect(443, hostname, () => {
 			upstream.write(firstPacket);
@@ -55,6 +58,7 @@ net.createServer(socket => {
 		});
 		upstream.on("error", () => socket.end());
 	});
+	socket.on("error", () => {});
 }).listen(443, () => {
 	console.log("Listening on port 443");
 });
