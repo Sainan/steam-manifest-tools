@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/Sainan/steam-manifest-tools.git"
   },
+  "scripts": {
+    "build": "bun build mango.js --compile"
+  },
   "dependencies": {
     "@doctormckay/steam-crypto": "^1.2.0",
     "adm-zip": "^0.5.16",
