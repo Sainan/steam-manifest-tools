@@ -6,23 +6,15 @@ if (!depotId || !manifestId) {
 }
 
 const fsPromises = require("fs/promises");
+const { fetchManifest }  = require(".");
 
-const forkers = [
-	"qwe213312",
-	"mejikuhibiniu1",
-	"Sainan",
-	"FreakyObservatory",
-];
 (async () => {
-	let i = 0;
-	for (const forker of forkers) {
-		const res = await fetch(`https://raw.githubusercontent.com/${forker}/k25FCdfEOoEJ42S6/refs/heads/main/${depotId}_${manifestId}.manifest`);
-		if (res.status == 200) {
-			const ab = await res.arrayBuffer();
-			await fsPromises.writeFile(`${depotId}_${manifestId}.manifest`, Buffer.from(ab));
-			console.log(`Saved in ${depotId}_${manifestId}.manifest`);
-			return;
-		}
+	const ab = await fetchManifest(depotId, manifestId);
+	if (ab) {
+		await fsPromises.writeFile(`${depotId}_${manifestId}.manifest`, Buffer.from(ab));
+		console.log(`Saved in ${depotId}_${manifestId}.manifest`);
 	}
-	console.log(`Could not find the given manifest. Double-check with https://steamdb.info/depot/${depotId}/manifests/ and report an issue in https://github.com/Sainan/k25FCdfEOoEJ42S6/issues if you're sure the manifest exists.`);
+	else {
+		console.log(`Could not find the given manifest. Double-check with https://steamdb.info/depot/${depotId}/manifests/ and report an issue in https://github.com/Sainan/k25FCdfEOoEJ42S6/issues if you're sure the manifest exists.`);
+	}
 })();

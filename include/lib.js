@@ -100,6 +100,20 @@ module.exports = {
 	getFiles,
 	getFileContents,
 	getChunk,
+	fetchManifest: async (depotId, manifestId) => {
+		const forkers = [
+			"qwe213312",
+			"mejikuhibiniu1",
+			"Sainan",
+			"FreakyObservatory",
+		];
+		for (const forker of forkers) {
+			const res = await fetch(`https://raw.githubusercontent.com/${forker}/k25FCdfEOoEJ42S6/refs/heads/main/${depotId}_${manifestId}.manifest`);
+			if (res.status == 200) {
+				return await res.arrayBuffer();
+			}
+		}
+	},
 	fetchDepotKey: async (depotId) => {
 		console.log(`Depot key was not supplied, attempting to fetch it...`);
 		const depotkeys = await fetch("https://raw.githubusercontent.com/SteamAutoCracks/ManifestHub/refs/heads/main/depotkeys.json").then(x => x.json());
