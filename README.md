@@ -1,14 +1,14 @@
-Scripts to interact with Steam manifest files.
-- `node download-manifest.js <depot id> <manifest id>`
-- `node download-chunks.js <manifest file> [--lancache]` (basically the same as prefilling a LAN cache, optionally downloads from a LAN cache)
-- `node populate-chunks.js <manifest file> <install dir> [depot key]` (can also be used to prefill a LAN cache, tho compression is not as good as Steam's)
-- `node lancache.js`
+Tools to interact with Steam manifest files.
+- `mango download-manifest <depot id> <manifest id>`
+- `mango download-chunks <manifest file> [--lancache]` (basically the same as prefilling a LAN cache, optionally downloads from a LAN cache)
+- `mango populate-chunks <manifest file> <install dir> [depot key]` (can also be used to prefill a LAN cache, tho compression is not as good as Steam's)
+- `mango lancache`
   - Must run as root to obtain port 80
   - `lancache.steamcontent.com` must resolve to your LAN cache server IP (either via custom DNS server or OS hosts file)
-- `node install.js <manifest file> [depot key]` (requires chunks to have been populated and/or downloaded beforehand)
-- `node to-json.js <manifest file> [depot key]`
-- `node to-hashdeep-auditfile.js <manifest file> [depot key]`
+- `mango install <manifest file> [depot key]` (requires chunks to have been populated and/or downloaded beforehand)
+- `mango to-json <manifest file> [depot key]`
+- `mango to-hashdeep-auditfile <manifest file> [depot key]`
   - Note that hashdeep requires exact path matches and this script makes a few assumptions
   - Example verification usage: `hashdeep -a -l -v -v -k 241561_8497448424664183398.manifest.auditfile -r 8497448424664183398`
-- `node to-torrent.js <manifest file> <file hash>`
-- `node verify-chunks.js <depot id> [depot key]`
+- `mango to-torrent <manifest file> <file hash>`
+- `mango verify-chunks <depot id> [depot key]`
