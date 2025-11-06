@@ -15,4 +15,5 @@ const { fetchDepotKey, verifyChunks } = require(".");
 	await verifyChunks(depotId, depotKey, (file, expectedHash) => {
 		console.log(`Deleted ${file}`);
 	});
+	process.exit(0);
 })();

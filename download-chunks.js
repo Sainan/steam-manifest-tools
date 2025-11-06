@@ -23,4 +23,4 @@ downloadChunks(
 	(path, status, host) => { console.log(`${path}: Got ${status/*} from ${host*/}`); },
 	(path, err) => { console.log(`${path}: `, err); },
 	hosts
-);
+).then(() => process.exit(0));

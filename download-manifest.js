@@ -13,8 +13,10 @@ const { fetchManifest }  = require(".");
 	if (ab) {
 		await fsPromises.writeFile(`${depotId}_${manifestId}.manifest`, Buffer.from(ab));
 		console.log(`Saved in ${depotId}_${manifestId}.manifest`);
+		process.exit(0);
 	}
 	else {
 		console.log(`Could not find the given manifest. Double-check with https://steamdb.info/depot/${depotId}/manifests/ and report an issue in https://github.com/Sainan/k25FCdfEOoEJ42S6/issues if you're sure the manifest exists.`);
+		process.exit(1);
 	}
 })();

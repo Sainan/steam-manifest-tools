@@ -20,3 +20,5 @@ if (manifest.filenames_encrypted) {
 
 }
 fs.writeFileSync(file + ".json", JSON.stringify(manifest, null, 2));
+
+process.exit(0);

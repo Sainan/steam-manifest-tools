@@ -21,4 +21,5 @@ const { fetchDepotKey, populateChunks } = require(".");
 			console.log(`Processing ${file}...`);
 		}
 	});
+	process.exit(0);
 })();

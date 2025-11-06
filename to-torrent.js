@@ -37,4 +37,5 @@ import("parse-torrent").then(({ toTorrentFile }) => {
 		}
 	})
 	fs.writeFileSync(`${file.sha_content}.torrent`, buf);
+	process.exit(0);
 });

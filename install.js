@@ -18,4 +18,5 @@ const { fetchDepotKey, install }  = require(".");
 	await install(manifest, depotKey, undefined, (file, existed) => {
 		console.log(`${existed ? "Repaired" : "Created"} ${file}`);
 	});
+	process.exit(0);
 })();
