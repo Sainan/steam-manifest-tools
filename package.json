@@ -7,7 +7,7 @@
     "url": "git+https://github.com/Sainan/steam-manifest-tools.git"
   },
   "scripts": {
-    "build": "bun build mango.js --compile"
+    "build": "mv node_modules nm && nexe mango.js -t x64-22.21.1 --build && mv nm node_modules"
   },
   "dependencies": {
     "@doctormckay/steam-crypto": "^1.2.0",
