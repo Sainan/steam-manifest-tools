@@ -26,7 +26,7 @@ try {
     'NODE_SEA_BLOB',
     JSON.stringify(blobPath),
     '--sentinel-fuse',
-    'NODE_SEA_FUSE_R30'
+    'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 '
   ].join(' ');
 
   execSync(postjectCommand, { stdio: 'inherit' });
