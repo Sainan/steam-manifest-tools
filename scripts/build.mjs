@@ -20,10 +20,16 @@ execSync(`node --experimental-sea-config ${JSON.stringify(seaConfigPath)}`, {
 copyFileSync(process.execPath, outputBinary);
 
 try {
-  execSync(
-    `npx --yes postject ${JSON.stringify(outputBinary)} NODE_SEA_BLOB ${JSON.stringify(blobPath)} --sentinel-fuse`,
-    { stdio: 'inherit' }
-  );
+  const postjectCommand = [
+    'npx --yes postject',
+    JSON.stringify(outputBinary),
+    'NODE_SEA_BLOB',
+    JSON.stringify(blobPath),
+    '--sentinel-fuse',
+    'NODE_SEA_FUSE_R30'
+  ].join(' ');
+
+  execSync(postjectCommand, { stdio: 'inherit' });
 } catch (error) {
   throw new Error(
     'Failed to embed the SEA blob using postject. Ensure you have access to the npm registry or install postject manually.',
