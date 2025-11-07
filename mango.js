@@ -14,7 +14,7 @@ switch (tool) {
         }
 
         const fsPromises = require("fs/promises");
-        const { fetchManifest }  = require(".");
+        const { fetchManifest }  = require("./lib.js");
 
         (async () => {
             const ab = await fetchManifest(depotId, manifestId);
@@ -44,7 +44,7 @@ switch (tool) {
         
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { DEFAULT_HOSTS, downloadChunks } = require(".");
+        const { DEFAULT_HOSTS, downloadChunks } = require("./lib.js");
         
         const hosts = lancache ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
         
@@ -70,7 +70,7 @@ switch (tool) {
         
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { fetchDepotKey, populateChunks } = require(".");
+        const { fetchDepotKey, populateChunks } = require("./lib.js");
         
         (async () => {
             const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
@@ -164,7 +164,7 @@ switch (tool) {
         
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { fetchDepotKey, install }  = require(".");
+        const { fetchDepotKey, install }  = require("./lib.js");
         
         (async () => {
             const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
@@ -224,7 +224,7 @@ switch (tool) {
             if (manifest.filenames_encrypted) {
                 if (!depotKey) {
                     console.log("Manifest has encrypted filenames. A depot key will be needed.");
-                    const { fetchDepotKey } = require(".");
+                    const { fetchDepotKey } = require("./lib.js");
                     depotKey = await fetchDepotKey(manifest.depot_id);
                 }
                 ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex"));
@@ -296,7 +296,7 @@ switch (tool) {
             process.exit(1);
         }
 
-        const { fetchDepotKey, verifyChunks } = require(".");
+        const { fetchDepotKey, verifyChunks } = require("./lib.js");
         (async () => {
             if (!depotKey) {
                 depotKey = await fetchDepotKey(depotId);
