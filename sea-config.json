@@ -1,0 +1,5 @@
+{
+  "main": "./mango.js",
+  "output": "./dist/mango.blob",
+  "disableExperimentalSEAWarning": true
+}

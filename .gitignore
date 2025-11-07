@@ -5,3 +5,4 @@ node_modules/
 *.manifest.json
 *.manifest.auditfile
 mango.exe
+dist/
