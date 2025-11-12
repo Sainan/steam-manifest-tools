@@ -1,14 +1,14 @@
-Tools to interact with Steam manifest files.
-- `mango download-manifest <depot id> <manifest id>`
-- `mango download-chunks <manifest file> [--lancache]` (basically the same as prefilling a LAN cache, optionally downloads from a LAN cache)
-- `mango populate-chunks <manifest file> <install dir> [depot key]` (can also be used to prefill a LAN cache, tho compression is not as good as Steam's)
+Tools to interact with Steam depots and manifests.
+- `mango download-chunks <depot id> <manifest id> [--lancache]` (basically the same as prefilling a LAN cache, optionally downloads from a LAN cache)
+- `mango populate-chunks <depot id> <manifest id> <install dir> [depot key]` (can also be used to prefill a LAN cache, tho compression is not as good as Steam's)
 - `mango lancache`
   - Must run as root to obtain port 80
   - `lancache.steamcontent.com` must resolve to your LAN cache server IP (either via custom DNS server or OS hosts file)
-- `mango install <manifest file> [depot key]` (requires chunks to have been populated and/or downloaded beforehand)
-- `mango to-json <manifest file> [depot key]`
-- `mango to-hashdeep-auditfile <manifest file> [depot key]`
+- `mango install <depot id> <manifest id> [depot key]` (requires chunks to have been populated and/or downloaded beforehand)
+- `mango to-json <depot id> <manifest id> [depot key]`
+- `mango to-hashdeep-auditfile <depot id> <manifest id> [depot key]`
   - Note that hashdeep requires exact path matches and this script makes a few assumptions
-  - Example verification usage: `hashdeep -a -l -v -v -k 241561_8497448424664183398.manifest.auditfile -r 8497448424664183398`
-- `mango to-torrent <manifest file> <file hash>`
+  - Example verification usage: `hashdeep -a -l -v -v -k 241561_8497448424664183398.auditfile -r 8497448424664183398`
+- `mango to-torrent <depot id> <manifest id> <file hash>`
 - `mango verify-chunks <depot id> [depot key]`
+- `mango download-manifest <depot id> <manifest id>`

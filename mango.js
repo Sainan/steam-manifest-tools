@@ -5,75 +5,65 @@ switch (tool) {
         process.exit(1);
     } break;
 
-    case "download-manifest": {
-        const depotId = process.argv[1 + 2];
-        const manifestId = process.argv[1 + 3];
+    case "download-manifest": { // No need to use this manually as all commands that need a manifest will fetch it on demand.
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
         if (!depotId || !manifestId) {
             console.log("Syntax: mango download-manifest <depot id> <manifest id>");
             process.exit(1);
         }
 
-        const fsPromises = require("fs/promises");
         const { fetchManifest }  = require("./lib.js");
 
         (async () => {
-            const ab = await fetchManifest(depotId, manifestId);
-            if (ab) {
-                await fsPromises.writeFile(`${depotId}_${manifestId}.manifest`, Buffer.from(ab));
-                console.log(`Saved in ${depotId}_${manifestId}.manifest`);
-                process.exit(0);
-            }
-            else {
-                console.log(`Could not find the given manifest. Double-check with https://steamdb.info/depot/${depotId}/manifests/ and report an issue in https://github.com/Sainan/k25FCdfEOoEJ42S6/issues if you're sure the manifest exists.`);
-                process.exit(1);
-            }
+            await fetchManifest(depotId, manifestId);
+            console.log(`Saved in manifests/${depotId}_${manifestId}.manifest`);
         })();
     } break;
 
     case "download-chunks": {
-        let manifestFile = process.argv[1 + 2];
-        let lancache = (process.argv[1 + 3] == "--lancache");
-        if (manifestFile == "--lancache") {
-            lancache = true;
-            manifestFile = process.argv[1 + 3];
-        }
-        if (!manifestFile) {
-            console.log("Syntax: mango download-chunks <manifest file> [--lancache]");
+        let depotId = process.argv[3];
+        let manifestId = process.argv[4];
+        let lancache = (process.argv[5] == "--lancache");
+        if (!depotId || !manifestId) {
+            console.log("Syntax: mango download-chunks <depot id> <manifest id> [--lancache]");
             process.exit(1);
         }
 
-        const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { DEFAULT_HOSTS, downloadChunks } = require("./lib.js");
+        const { DEFAULT_HOSTS, fetchManifest, downloadChunks } = require("./lib.js");
 
         const hosts = lancache ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
 
-        const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
-        downloadChunks(
-            manifest,
-            undefined /*(num_chunks) => {}*/,
-            (path, host) => { console.log(`${path}: Downloading from ${host}`); },
-            (path, status, host) => { console.log(`${path}: Got ${status/*} from ${host*/}`); },
-            (path, err) => { console.log(`${path}: `, err); },
-            hosts
-        ).then(() => process.exit(0));
+        (async () => {
+            const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
+            await downloadChunks(
+                manifest,
+                undefined /*(num_chunks) => {}*/,
+                (path, host) => { console.log(`${path}: Downloading from ${host}`); },
+                (path, status, host) => { console.log(`${path}: Got ${status/*} from ${host*/}`); },
+                (path, err) => { console.log(`${path}: `, err); },
+                hosts
+            )
+            process.exit(0);
+        })();
     } break;
 
     case "populate-chunks": {
-        const manifestFile = process.argv[1 + 2];
-        const installDir = process.argv[1 + 3];
-        let depotKey = process.argv[1 + 4];
-        if (!manifestFile || !installDir) {
-            console.log("Syntax: mango populate-chunks <manifest file> <install dir> [depot key]");
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
+        const installDir = process.argv[5];
+        let depotKey = process.argv[6];
+        if (!depotId || !manifestId || !installDir) {
+            console.log("Syntax: mango populate-chunks <depot id> <manifest id> <install dir> [depot key]");
             process.exit(1);
         }
 
-        const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { fetchDepotKey, populateChunks } = require("./lib.js");
+        const { fetchManifest, fetchDepotKey, populateChunks } = require("./lib.js");
 
         (async () => {
-            const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
+            const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
             if (!depotKey) {
                 console.log(`Depot key was not supplied, attempting to fetch it...`);
                 depotKey = await fetchDepotKey(manifest.depot_id);
@@ -156,19 +146,19 @@ switch (tool) {
     } break;
 
     case "install": {
-        const manifestFile = process.argv[1 + 2];
-        let depotKey = process.argv[1 + 3];
-        if (!manifestFile) {
-            console.log("Syntax: mango install <manifest file> [depot key]");
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
+        let depotKey = process.argv[5];
+        if (!depotId || !manifestId) {
+            console.log("Syntax: mango install <depot id> <manifest id> [depot key]");
             process.exit(1);
         }
 
-        const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { fetchDepotKey, install }  = require("./lib.js");
+        const { fetchManifest, fetchDepotKey, install }  = require("./lib.js");
 
         (async () => {
-            const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
+            const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
             if (!depotKey) {
                 console.log(`Depot key was not supplied, attempting to fetch it...`);
                 depotKey = await fetchDepotKey(manifest.depot_id);
@@ -182,46 +172,51 @@ switch (tool) {
     } break;
 
     case "to-json": {
-        const fs = require("fs");
-        const ContentManifest = require("steam-user/components/content_manifest");
-
-        const file = process.argv[1 + 2];
-        const depotKey = process.argv[1 + 3];
-        if (!file) {
-            console.log("Syntax: mango to-json <manifest file> [depot key]");
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
+        const depotKey = process.argv[5];
+        if (!depotId || !manifestId) {
+            console.log("Syntax: mango to-json <depot id> <manifest id> [depot key]");
             process.exit(1);
         }
 
-        const buf = fs.readFileSync(file);
-        const manifest = ContentManifest.parse(buf);
-        if (manifest.filenames_encrypted) {
-            if (depotKey) {
-                ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex")); // Sets filenames_encrypted to false
-                //manifest.filenames_decrypted = true; // Indicate that this transformation took place in the JSON export // Kinda pointless because some .manifest files are already decrypted by their sources
-            } else {
-                console.log("Manifest has encrypted filenames, suggest supplying depot key");
-            }
-        }
-        fs.writeFileSync(file + ".json", JSON.stringify(manifest, null, 2));
+        const fs = require("fs");
+        const ContentManifest = require("steam-user/components/content_manifest");
+        const { fetchManifest }  = require("./lib.js");
 
-        process.exit(0);
+        (async () => {
+            const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
+            if (manifest.filenames_encrypted) {
+                if (depotKey) {
+                    ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex")); // Sets filenames_encrypted to false
+                    //manifest.filenames_decrypted = true; // Indicate that this transformation took place in the JSON export // Kinda pointless because some .manifest files are already decrypted by their sources
+                } else {
+                    console.log("Manifest has encrypted filenames, suggest supplying depot key");
+                }
+            }
+            fs.writeFileSync(`${depotId}_${manifestId}.json`, JSON.stringify(manifest, null, 2));
+            console.log(`Saved in ${depotId}_${manifestId}.json`);
+
+            process.exit(0);
+        })();
     } break;
 
     case "to-hashdeep-auditfile": {
-        const fs = require("fs");
-        const path = require("path");
-        const ContentManifest = require("steam-user/components/content_manifest");
-
-        const file = process.argv[1 + 2];
-        let depotKey = process.argv[1 + 3];
-        if (!file) {
-            console.log("Syntax: mango to-hashdeep-auditfile <manifest file> [depot key]");
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
+        let depotKey = process.argv[5];
+        if (!depotId || !manifestId) {
+            console.log("Syntax: mango to-hashdeep-auditfile <depot id> <manifest id> [depot key]");
             process.exit(1);
         }
 
+        const fs = require("fs");
+        const path = require("path");
+        const ContentManifest = require("steam-user/components/content_manifest");
+        const { fetchManifest }  = require("./lib.js");
+
         (async () => {
-            const buf = fs.readFileSync(file);
-            const manifest = ContentManifest.parse(buf);
+            const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
             if (manifest.filenames_encrypted) {
                 if (!depotKey) {
                     console.log("Manifest has encrypted filenames. A depot key will be needed.");
@@ -232,7 +227,7 @@ switch (tool) {
                 ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex"));
             }
 
-            const fh = fs.createWriteStream(`${file}.auditfile`);
+            const fh = fs.createWriteStream(`${depotId}_${manifestId}.auditfile`);
             fh.write("%%%% HASHDEEP-1.0\n");
             fh.write("%%%% size,sha1,filename\n");
             for (const file of manifest.files) {
@@ -241,13 +236,23 @@ switch (tool) {
                 }
             }
             fh.end();
+            fh.on("finish", () => {
+                console.log(`Saved in ${depotId}_${manifestId}.auditfile`);
 
-            process.exit(0);
+                process.exit(0);
+            });
         })();
     } break;
 
     case "to-torrent": {
-        const fs = require("fs");
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
+        const fileHash = process.argv[5];
+        if (!depotId || !manifestId || !fileHash) {
+            console.log("Syntax: mango to-torrent <depot id> <manifest id> <file hash>");
+            process.exit(1);
+        }
+
         const ContentManifest = require("steam-user/components/content_manifest");
 
         function toPieces(hexArray) {
@@ -260,19 +265,14 @@ switch (tool) {
             return Buffer.concat(bufs);
         }
 
-        const manifestFile = process.argv[1 + 2];
-        const fileHash = process.argv[1 + 3];
-        if (!manifestFile || !fileHash) {
-            console.log("Syntax: mango to-torrent <manifest file> <file hash>");
-            process.exit(1);
-        }
-        const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
-        const file = manifest.files.find(x => x.sha_content == fileHash);
-        if (!file) {
-            console.log(`No file with content hash ${fileHash} found in ${manifestFile}`);
-            process.exit(1);
-        }
-        import("parse-torrent").then(({ toTorrentFile }) => {
+        (async () => {
+            const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
+            const file = manifest.files.find(x => x.sha_content == fileHash);
+            if (!file) {
+                console.log(`No file with content hash ${fileHash} found in ${depotId}_${manifestId}.manifest`);
+                process.exit(1);
+            }
+            const { toTorrentFile } = await import("parse-torrent");
             for (const chunk of file.chunks) {
                 chunk.offset = parseInt(chunk.offset);
             }
@@ -286,13 +286,14 @@ switch (tool) {
                 }
             })
             fs.writeFileSync(`${file.sha_content}.torrent`, buf);
+            console.log(`Saved in ${file.sha_content}.torrent`);
             process.exit(0);
-        });
+        })();
     } break;
 
     case "verify-chunks": {
-        const depotId = process.argv[1 + 2];
-        let depotKey = process.argv[1 + 3];
+        const depotId = process.argv[3];
+        let depotKey = process.argv[4];
         if (!depotId) {
             console.log("Syntax: mango verify-chunks <depot id> [depot key]");
             process.exit(1);

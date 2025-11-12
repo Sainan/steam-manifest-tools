@@ -1,7 +1,7 @@
+manifests/
 depot/
 install/
 node_modules/
-*.manifest
-*.manifest.json
-*.manifest.auditfile
+*.json
+*.auditfile
 mango.exe

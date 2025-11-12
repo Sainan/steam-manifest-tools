@@ -101,6 +101,12 @@ module.exports = {
 	getFileContents,
 	getChunk,
 	fetchManifest: async (depotId, manifestId) => {
+		try {
+			return await fsPromises.readFile(`manifests/${depotId}_${manifestId}.manifest`);
+		}
+		catch (e) {
+			// fallthrough
+		}
 		const forkers = [
 			"qwe213312",
 			"mejikuhibiniu1",
@@ -110,9 +116,13 @@ module.exports = {
 		for (const forker of forkers) {
 			const res = await fetch(`https://raw.githubusercontent.com/${forker}/k25FCdfEOoEJ42S6/refs/heads/main/${depotId}_${manifestId}.manifest`);
 			if (res.status == 200) {
-				return await res.arrayBuffer();
+				const ab = await res.arrayBuffer();
+				await fsPromises.mkdir(`manifests`, { recursive: true });
+				await fsPromises.writeFile(`manifests/${depotId}_${manifestId}.manifest`, Buffer.from(ab));
+				return ab;
 			}
 		}
+		throw new Error(`Could not find the given manifest (${manifestId}). Double-check with https://steamdb.info/depot/${depotId}/manifests/ and report an issue in https://github.com/Sainan/k25FCdfEOoEJ42S6/issues if you're sure the manifest exists.`);
 	},
 	fetchDepotKey: async (depotId) => {
 		const depotkeys = await fetch("https://raw.githubusercontent.com/SteamAutoCracks/ManifestHub/refs/heads/main/depotkeys.json").then(x => x.json());
