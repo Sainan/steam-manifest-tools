@@ -105,7 +105,7 @@ module.exports = {
 			"qwe213312",
 			"mejikuhibiniu1",
 			"Sainan",
-			"FreakyObservatory",
+			//"FreakyObservatory", // Seems inactive now and seems to have no manifests missing in the above.
 		];
 		for (const forker of forkers) {
 			const res = await fetch(`https://raw.githubusercontent.com/${forker}/k25FCdfEOoEJ42S6/refs/heads/main/${depotId}_${manifestId}.manifest`);
