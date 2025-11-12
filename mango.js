@@ -41,13 +41,13 @@ switch (tool) {
             console.log("Syntax: mango download-chunks <manifest file> [--lancache]");
             process.exit(1);
         }
-        
+
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
         const { DEFAULT_HOSTS, downloadChunks } = require("./lib.js");
-        
+
         const hosts = lancache ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
-        
+
         const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
         downloadChunks(
             manifest,
@@ -67,11 +67,11 @@ switch (tool) {
             console.log("Syntax: mango populate-chunks <manifest file> <install dir> [depot key]");
             process.exit(1);
         }
-        
+
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
         const { fetchDepotKey, populateChunks } = require("./lib.js");
-        
+
         (async () => {
             const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
             if (!depotKey) {
@@ -95,16 +95,16 @@ switch (tool) {
         const express = require("express");
         const net = require("net");
         const sni = require("sni");
-        
+
         const app = express();
-        
+
         app.use((req, res, next) => {
             res.on("finish", () => {
                 console.log(`${req.socket.remoteAddress} - ${req.url} - ${res.statusCode}`);
             });
             next();
         });
-        
+
         app.get("/depot/:depotId/chunk/:sha", async (req, res) => {
             if (fs.existsSync(__dirname + req.url)) {
                 res.sendFile(__dirname + req.url);
@@ -125,17 +125,17 @@ switch (tool) {
                 res.status(400).send("Don't have this chunk").end();
             }
         });
-        
+
         app.use((req, res) => {
             res.status(400).send("Don't know this endpoint").end();
         });
-        
+
         app.listen(80, () => {
             console.log("Listening on port 80");
         });
-        
+
         // Transparently forward traffic on port 443 to avoid breaking HTTPS connections
-        
+
         net.createServer(socket => {
             socket.once("data", firstPacket => {
                 const hostname = sni(firstPacket);
@@ -162,11 +162,11 @@ switch (tool) {
             console.log("Syntax: mango install <manifest file> [depot key]");
             process.exit(1);
         }
-        
+
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
         const { fetchDepotKey, install }  = require("./lib.js");
-        
+
         (async () => {
             const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
             if (!depotKey) {
@@ -184,14 +184,14 @@ switch (tool) {
     case "to-json": {
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        
+
         const file = process.argv[1 + 2];
         const depotKey = process.argv[1 + 3];
         if (!file) {
             console.log("Syntax: mango to-json <manifest file> [depot key]");
             process.exit(1);
         }
-        
+
         const buf = fs.readFileSync(file);
         const manifest = ContentManifest.parse(buf);
         if (manifest.filenames_encrypted) {
@@ -201,10 +201,9 @@ switch (tool) {
             } else {
                 console.log("Manifest has encrypted filenames, suggest supplying depot key");
             }
-        
         }
         fs.writeFileSync(file + ".json", JSON.stringify(manifest, null, 2));
-        
+
         process.exit(0);
     } break;
 
@@ -212,14 +211,14 @@ switch (tool) {
         const fs = require("fs");
         const path = require("path");
         const ContentManifest = require("steam-user/components/content_manifest");
-        
+
         const file = process.argv[1 + 2];
         let depotKey = process.argv[1 + 3];
         if (!file) {
             console.log("Syntax: mango to-hashdeep-auditfile <manifest file> [depot key]");
             process.exit(1);
         }
-        
+
         (async () => {
             const buf = fs.readFileSync(file);
             const manifest = ContentManifest.parse(buf);
@@ -232,7 +231,7 @@ switch (tool) {
                 }
                 ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex"));
             }
-        
+
             const fh = fs.createWriteStream(`${file}.auditfile`);
             fh.write("%%%% HASHDEEP-1.0\n");
             fh.write("%%%% size,sha1,filename\n");
@@ -242,7 +241,7 @@ switch (tool) {
                 }
             }
             fh.end();
-        
+
             process.exit(0);
         })();
     } break;
@@ -250,7 +249,7 @@ switch (tool) {
     case "to-torrent": {
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        
+
         function toPieces(hexArray) {
             const bufs = hexArray.map(h => {
                 if (typeof h !== "string" || h.length !== 40) {
@@ -260,7 +259,7 @@ switch (tool) {
             });
             return Buffer.concat(bufs);
         }
-        
+
         const manifestFile = process.argv[1 + 2];
         const fileHash = process.argv[1 + 3];
         if (!manifestFile || !fileHash) {
