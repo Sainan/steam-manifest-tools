@@ -75,6 +75,7 @@ switch (tool) {
         (async () => {
             const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
             if (!depotKey) {
+                console.log(`Depot key was not supplied, attempting to fetch it...`);
                 depotKey = await fetchDepotKey(manifest.depot_id);
             }
             depotKey = Buffer.from(depotKey, "hex");
@@ -169,6 +170,7 @@ switch (tool) {
         (async () => {
             const manifest = ContentManifest.parse(fs.readFileSync(manifestFile));
             if (!depotKey) {
+                console.log(`Depot key was not supplied, attempting to fetch it...`);
                 depotKey = await fetchDepotKey(manifest.depot_id);
             }
             depotKey = Buffer.from(depotKey, "hex");
@@ -224,6 +226,7 @@ switch (tool) {
             if (manifest.filenames_encrypted) {
                 if (!depotKey) {
                     console.log("Manifest has encrypted filenames. A depot key will be needed.");
+                    console.log(`Depot key was not supplied, attempting to fetch it...`);
                     const { fetchDepotKey } = require("./lib.js");
                     depotKey = await fetchDepotKey(manifest.depot_id);
                 }
@@ -299,6 +302,7 @@ switch (tool) {
         const { fetchDepotKey, verifyChunks } = require("./lib.js");
         (async () => {
             if (!depotKey) {
+                console.log(`Depot key was not supplied, attempting to fetch it...`);
                 depotKey = await fetchDepotKey(depotId);
             }
             depotKey = Buffer.from(depotKey, "hex");
