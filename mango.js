@@ -266,25 +266,34 @@ switch (tool) {
         }
 
         (async () => {
+            const { fetchManifest } = require("./lib.js");
             const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
             const file = manifest.files.find(x => x.sha_content == fileHash);
             if (!file) {
                 console.log(`No file with content hash ${fileHash} found in ${depotId}_${manifestId}.manifest`);
                 process.exit(1);
             }
-            const { toTorrentFile } = await import("parse-torrent");
             for (const chunk of file.chunks) {
                 chunk.offset = parseInt(chunk.offset);
             }
             file.chunks.sort((a, b) => a.offset - b.offset);
+            let pieceSize = file.chunks[0].cb_original;
+            for (let i = 1; i < file.chunks.length - 1; ++i) {
+                if (pieceSize != file.chunks[i].cb_original) {
+                    console.log(`This file has non-uniformly sized chunks and is therefore unrepresentable in BitTorrent.`);
+                    process.exit(2);
+                }
+            }
+            const { toTorrentFile } = await import("parse-torrent");
             const buf = toTorrentFile({
                 info: {
                     name: file.sha_content,
                     length: parseInt(file.size),
-                    'piece length': 1048576,
+                    'piece length': pieceSize,
                     pieces: toPieces(file.chunks.map(chunk => chunk.sha))
                 }
-            })
+            });
+            const fs = require("node:fs");
             fs.writeFileSync(`${file.sha_content}.torrent`, buf);
             console.log(`Saved in ${file.sha_content}.torrent`);
             process.exit(0);
