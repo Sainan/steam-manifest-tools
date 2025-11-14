@@ -5,7 +5,7 @@ Tools to interact with Steam depots and manifests.
   - Must run as root to obtain port 80
   - `lancache.steamcontent.com` must resolve to your LAN cache server IP (either via custom DNS server or OS hosts file)
 - `mango install <depot id> <manifest id> [depot key]` (requires chunks to have been populated and/or downloaded beforehand)
-- `mango to-json <depot id> <manifest id> [depot key]`
+- `mango to-json <depot id> <manifest id> [depot key|--no-decrypt]`
 - `mango to-hashdeep-auditfile <depot id> <manifest id> [depot key]`
   - Note that hashdeep requires exact path matches and this script makes a few assumptions
   - Example verification usage: `hashdeep -a -l -v -v -k 241561_8497448424664183398.auditfile -r 8497448424664183398`

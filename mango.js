@@ -174,25 +174,26 @@ switch (tool) {
     case "to-json": {
         const depotId = process.argv[3];
         const manifestId = process.argv[4];
-        const depotKey = process.argv[5];
+        let depotKey = process.argv[5];
         if (!depotId || !manifestId) {
-            console.log("Syntax: mango to-json <depot id> <manifest id> [depot key]");
+            console.log("Syntax: mango to-json <depot id> <manifest id> [depot key|--no-decrypt]");
             process.exit(1);
         }
 
         const fs = require("fs");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { fetchManifest }  = require("./lib.js");
+        const { fetchManifest, fetchDepotKey }  = require("./lib.js");
 
         (async () => {
             const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
-            if (manifest.filenames_encrypted) {
-                if (depotKey) {
-                    ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex")); // Sets filenames_encrypted to false
-                    //manifest.filenames_decrypted = true; // Indicate that this transformation took place in the JSON export // Kinda pointless because some .manifest files are already decrypted by their sources
-                } else {
-                    console.log("Manifest has encrypted filenames, suggest supplying depot key");
+            if (manifest.filenames_encrypted && depotKey != "--no-decrypt") {
+                if (!depotKey) {
+                    console.log("Manifest has encrypted filenames and --no-decrypt was not specified. A depot key will be needed.");
+                    console.log(`Depot key was not supplied, attempting to fetch it...`);
+                    depotKey = await fetchDepotKey(manifest.depot_id);
                 }
+                ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex")); // Sets filenames_encrypted to false
+                //manifest.filenames_decrypted = true; // Indicate that this transformation took place in the JSON export // Kinda pointless because some .manifest files are already decrypted by their sources
             }
             fs.writeFileSync(`${depotId}_${manifestId}.json`, JSON.stringify(manifest, null, 2));
             console.log(`Saved in ${depotId}_${manifestId}.json`);
@@ -213,7 +214,7 @@ switch (tool) {
         const fs = require("fs");
         const path = require("path");
         const ContentManifest = require("steam-user/components/content_manifest");
-        const { fetchManifest }  = require("./lib.js");
+        const { fetchManifest, fetchDepotKey }  = require("./lib.js");
 
         (async () => {
             const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
@@ -221,7 +222,6 @@ switch (tool) {
                 if (!depotKey) {
                     console.log("Manifest has encrypted filenames. A depot key will be needed.");
                     console.log(`Depot key was not supplied, attempting to fetch it...`);
-                    const { fetchDepotKey } = require("./lib.js");
                     depotKey = await fetchDepotKey(manifest.depot_id);
                 }
                 ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex"));
