@@ -22,9 +22,9 @@ switch (tool) {
     } break;
 
     case "download-chunks": {
-        let depotId = process.argv[3];
-        let manifestId = process.argv[4];
-        let lancache = (process.argv[5] == "--lancache");
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
+        const lancache = (process.argv[5] == "--lancache");
         if (!depotId || !manifestId) {
             console.log("Syntax: mango download-chunks <depot id> <manifest id> [--lancache]");
             process.exit(1);
@@ -167,6 +167,50 @@ switch (tool) {
             await install(manifest, depotKey, undefined, (file, existed) => {
                 console.log(`${existed ? "Repaired" : "Created"} ${file}`);
             });
+            process.exit(0);
+        })();
+    } break;
+
+    case "download-and-install": {
+        const depotId = process.argv[3];
+        const manifestId = process.argv[4];
+        let depotKey = process.argv[5];
+        let lancache = (process.argv[6] == "--lancache");
+        if (!depotId || !manifestId) {
+            console.log("Syntax: mango download-and-install <depot id> <manifest id> [depot key] [--lancache]");
+            process.exit(1);
+        }
+        if (depotKey == "--lancache") {
+            depotKey = undefined;
+            lancache = true;
+        }
+
+        const ContentManifest = require("steam-user/components/content_manifest");
+        const { DEFAULT_HOSTS, fetchManifest, fetchDepotKey, downloadAndInstall }  = require("./lib.js");
+
+        const hosts = lancache ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
+
+        (async () => {
+            const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
+            if (!depotKey) {
+                console.log(`Depot key was not supplied, attempting to fetch it...`);
+                depotKey = await fetchDepotKey(manifest.depot_id);
+            }
+            depotKey = Buffer.from(depotKey, "hex");
+
+            ContentManifest.decryptFilenames(manifest, depotKey);
+            const installDir = `install/${manifest.depot_id}/${manifest.gid_manifest}`;
+
+            await downloadAndInstall(
+                manifest,
+                depotKey,
+                undefined /*(num_chunks) => {}*/,
+                (path, host) => { console.log(`${path}: Downloading from ${host}`); },
+                (path, status, host) => { console.log(`${path}: Got ${status/*} from ${host*/}`); },
+                (path, err) => { console.log(`${path}: `, err); },
+                hosts
+            );
+
             process.exit(0);
         })();
     } break;

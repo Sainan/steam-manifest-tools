@@ -92,6 +92,73 @@ const getChunk = async (depotId, depotKey, hash) => {
 	}
 };
 
+const downloadChunks = (manifest, onStartDownloading, onStartDownload, onFinishDownload, onErroredDownload, hosts) => {
+	hosts ??= DEFAULT_HOSTS;
+	return new Promise(resolve => {
+		fs.mkdirSync(`depot/${manifest.depot_id}/chunk`, { recursive: true });
+		const toDownload = {};
+		const alreadyDownloaded = [];
+		for (const file of manifest.files) {
+			for (const chunk of file.chunks) {
+				if (fs.existsSync(`depot/${manifest.depot_id}/chunk/${chunk.sha}`)) {
+					alreadyDownloaded.push(`depot/${manifest.depot_id}/chunk/${chunk.sha}`);
+				}
+				else {
+					toDownload[`depot/${manifest.depot_id}/chunk/${chunk.sha}`] = true;
+				}
+			}
+		}
+		let remaining_chunks = Object.keys(toDownload).length;
+		if (onStartDownloading) {
+			onStartDownloading(remaining_chunks, alreadyDownloaded);
+		}
+		if (remaining_chunks == 0) {
+			resolve();
+		}
+		let /*host_i = 0,*/ running = 0;
+		const concurrency = hosts.length == 1 ? 4 : (hosts.length * 2);
+		const loop = () => {
+			while (running < concurrency) {
+				const path = Object.keys(toDownload)[0];
+				if (!path) {
+					break;
+				}
+				++running;
+				delete toDownload[path];
+				const host = hosts[Math.floor(Math.random()*hosts.length)];
+				//const host = hosts[host_i]; host_i = (host_i + 1) % hosts.length;
+				if (onStartDownload) {
+					onStartDownload(path, host);
+				}
+				fetch(`${host}/${path}`).then(async res => {
+					if (res.status == 200) {
+						const ab = await res.arrayBuffer();
+						await fsPromises.writeFile(path, Buffer.from(ab));
+						if (--remaining_chunks == 0) {
+							resolve();
+						}
+					}
+					else {
+						toDownload[path] = true;
+					}
+					if (onFinishDownload) {
+						onFinishDownload(path, res.status, host);
+					}
+				}).catch(err => {
+					if (onErroredDownload) {
+						onErroredDownload(path, err);
+					}
+					toDownload[path] = true;
+				}).finally(() => {
+					--running;
+					loop();
+				});
+			}
+		};
+		loop();
+	});
+};
+
 module.exports = {
 	DEFAULT_HOSTS,
 	sha1,
@@ -172,68 +239,7 @@ module.exports = {
 			++file_i;
 		}
 	},
-	downloadChunks: (manifest, onStartDownloading, onStartDownload, onFinishDownload, onErroredDownload, hosts) => {
-		hosts ??= DEFAULT_HOSTS;
-		return new Promise(resolve => {
-			fs.mkdirSync(`depot/${manifest.depot_id}/chunk`, { recursive: true });
-			const toDownload = {};
-			for (const file of manifest.files) {
-				for (const chunk of file.chunks) {
-					if (!fs.existsSync(`depot/${manifest.depot_id}/chunk/${chunk.sha}`)) {
-						toDownload[`depot/${manifest.depot_id}/chunk/${chunk.sha}`] = true;
-					}
-				}
-			}
-			let remaining_chunks = Object.keys(toDownload).length;
-			if (onStartDownloading) {
-				onStartDownloading(remaining_chunks);
-			}
-			if (remaining_chunks == 0) {
-				resolve();
-			}
-			let /*host_i = 0,*/ running = 0;
-			const concurrency = hosts.length == 1 ? 4 : (hosts.length * 2);
-			const loop = () => {
-				while (running < concurrency) {
-					const path = Object.keys(toDownload)[0];
-					if (!path) {
-						break;
-					}
-					++running;
-					delete toDownload[path];
-					const host = hosts[Math.floor(Math.random()*hosts.length)];
-					//const host = hosts[host_i]; host_i = (host_i + 1) % hosts.length;
-					if (onStartDownload) {
-						onStartDownload(path, host);
-					}
-					fetch(`${host}/${path}`).then(async res => {
-						if (onFinishDownload) {
-							onFinishDownload(path, res.status, host);
-						}
-						if (res.status == 200) {
-							const ab = await res.arrayBuffer();
-							await fsPromises.writeFile(path, Buffer.from(ab));
-							if (--remaining_chunks == 0) {
-								resolve();
-							}
-						}
-						else {
-							toDownload[path] = true;
-						}
-					}).catch(err => {
-						if (onErroredDownload) {
-							onErroredDownload(path, err);
-						}
-						toDownload[path] = true;
-					}).finally(() => {
-						--running;
-						loop();
-					});
-				}
-			};
-			loop();
-		});
-	},
+	downloadChunks,
 	install: async (manifest, depotKey, installDir, onFileWritten) => {
 		ContentManifest.decryptFilenames(manifest, depotKey);
 		installDir ??= `install/${manifest.depot_id}/${manifest.gid_manifest}`;
@@ -265,6 +271,77 @@ module.exports = {
 			})());
 		}
 		await Promise.all(promises);
+	},
+	downloadAndInstall: async (manifest, depotKey, onStartDownloading, onStartDownload, onFinishDownload, onErroredDownload, hosts, installDir) => {
+		const depotId = manifest.depot_id;
+
+		ContentManifest.decryptFilenames(manifest, depotKey);
+		installDir ??= `install/${manifest.depot_id}/${manifest.gid_manifest}`;
+
+		const writeStreams = {};
+		for (const file of manifest.files) {
+			if (!(file.flags & 64)) {
+				const filename = file.filename.replace(/\\/g, "/");
+				await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
+				writeStreams[file.filename] = await fsPromises.open(path.join(installDir, filename), "w");
+			}
+		}
+
+		const ioQueue = [];
+		let ioLoopRunning = false;
+		let ioLoopPromise;
+		const ioLoop = async () => {
+			ioLoopRunning = true;
+			while (ioQueue.length > 0) {
+				const chunkSha = ioQueue.shift();
+				const data = await getChunk(depotId, depotKey, chunkSha);
+				for (const file of manifest.files) {
+					for (const chunk of file.chunks) {
+						if (chunk.sha == chunkSha) {
+							await writeStreams[file.filename].write(data, 0, data.byteLength, parseInt(chunk.offset));
+						}
+					}
+				}
+			}
+			ioLoopRunning = false;
+		};
+		const ioAddPath = (path) => {
+			ioQueue.push(path.substr(path.length - 40));
+			if (!ioLoopRunning) {
+				ioLoopPromise = ioLoop();
+			}
+		};
+
+		await downloadChunks(
+			manifest,
+			(num_chunks, alreadyDownloaded) => {
+				for (const path of alreadyDownloaded) {
+					ioAddPath(path);
+				}
+				if (onStartDownloading) {
+					onStartDownloading(num_chunks);
+				}
+			},
+			onStartDownload,
+			(path, status, host) => {
+				if (status == 200) {
+					ioAddPath(path);
+				}
+				if (onFinishDownload) {
+					onFinishDownload(path, status, host);
+				}
+			},
+			onErroredDownload,
+			hosts
+		);
+
+		if (ioLoopRunning) {
+			await ioLoopPromise;
+		}
+
+		for (const writeStream of Object.values(writeStreams)) {
+			await writeStream.close();
+		}
 	},
 	verifyChunks: async (depotId, depotKey, onDeletedFile) => {
 		const files = await getFiles(`depot/${depotId}/chunk`);
