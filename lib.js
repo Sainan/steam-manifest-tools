@@ -202,7 +202,7 @@ module.exports = {
 		if (manifest.filenames_encrypted) {
 			ContentManifest.decryptFilenames(manifest, depotKey);
 		}
-		fs.mkdirSync(`depot/${manifest.depot_id}/chunk`, { recursive: true });
+		await fsPromises.mkdir(`depot/${manifest.depot_id}/chunk`, { recursive: true });
 		let file_i = 0;
 		for (const file of manifest.files) {
 			if (file.flags & 64) {
@@ -243,7 +243,7 @@ module.exports = {
 	install: async (manifest, depotKey, installDir, onFileWritten) => {
 		ContentManifest.decryptFilenames(manifest, depotKey);
 		installDir ??= `install/${manifest.depot_id}/${manifest.gid_manifest}`;
-		fs.mkdirSync(installDir, { recursive: true });
+		await fsPromises.mkdir(installDir, { recursive: true });
 		const promises = [];
 		for (const file of manifest.files) {
 			if (file.flags & 64) {
