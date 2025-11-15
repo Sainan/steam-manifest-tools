@@ -192,10 +192,18 @@ module.exports = {
 		throw new Error(`Could not find the given manifest (${manifestId}). Double-check with https://steamdb.info/depot/${depotId}/manifests/ and report an issue in https://github.com/Sainan/k25FCdfEOoEJ42S6/issues if you're sure the manifest exists.`);
 	},
 	fetchDepotKey: async (depotId) => {
+		try {
+			return await fsPromises.readFile(`depot/${depotId}/key.txt`, "utf-8");
+		}
+		catch (e) {
+			// fallthrough
+		}
 		const depotkeys = await fetch("https://raw.githubusercontent.com/SteamAutoCracks/ManifestHub/refs/heads/main/depotkeys.json").then(x => x.json());
 		if (!depotkeys[depotId]) {
 			throw new Error(`Failed to get the depot key.`);
 		}
+		await fsPromises.mkdir(`depot/${depotId}`, { recursive: true });
+		fsPromises.writeFile(`depot/${depotId}/key.txt`, depotkeys[depotId], "utf-8");
 		return depotkeys[depotId];
 	},
 	populateChunks: async (manifest, depotKey, installDir, onProgress) => {
