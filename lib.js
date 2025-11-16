@@ -254,11 +254,12 @@ module.exports = {
 		await fsPromises.mkdir(installDir, { recursive: true });
 		const promises = [];
 		for (const file of manifest.files) {
-			if (file.flags & 64) {
-				continue;
-			}
 			promises.push((async () => {
 				const filename = file.filename.replace(/\\/g, "/");
+				if (file.flags & 64) {
+					await fsPromises.mkdir(path.join(installDir, filename), { recursive: true });
+					return;
+				}
 				const exists = fs.existsSync(path.join(installDir, filename));
 				if (!exists || await sha1file(path.join(installDir, filename)) != file.sha_content) {
 					for (const chunk of file.chunks) {
@@ -288,8 +289,11 @@ module.exports = {
 
 		const writeStreams = {};
 		for (const file of manifest.files) {
-			if (!(file.flags & 64)) {
-				const filename = file.filename.replace(/\\/g, "/");
+			const filename = file.filename.replace(/\\/g, "/");
+			if (file.flags & 64) {
+				await fsPromises.mkdir(path.join(installDir, filename), { recursive: true });
+			}
+			else {
 				await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
 				writeStreams[file.filename] = await fsPromises.open(path.join(installDir, filename), "w");
 			}
