@@ -1,3 +1,17 @@
+const parseArguments = (base, bools = []) => {
+	const res = [];
+	let j = 0;
+	for (let i = base; i != process.argv.length; ++i) {
+		if (bools.indexOf(process.argv[i]) != -1) {
+			res[process.argv[i]] = true;
+		}
+		else {
+			res[j++] = process.argv[i];
+		}
+	}
+	return res;
+};
+
 const tool = process.argv[2];
 switch (tool) {
 	default: {
@@ -22,9 +36,8 @@ switch (tool) {
 	} break;
 
 	case "download-chunks": {
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
-		const lancache = (process.argv[5] == "--lancache");
+		const args = parseArguments(3, ["--lancache"]);
+		const [depotId, manifestId] = args;
 		if (!depotId || !manifestId) {
 			console.log("Syntax: mango download-chunks <depot id> <manifest id> [--lancache]");
 			process.exit(1);
@@ -33,7 +46,7 @@ switch (tool) {
 		const ContentManifest = require("steam-user/components/content_manifest");
 		const { DEFAULT_HOSTS, fetchManifest, downloadChunks } = require("./lib.js");
 
-		const hosts = lancache ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
+		const hosts = args["--lancache"] ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
 
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
@@ -187,9 +200,8 @@ switch (tool) {
 	} break;
 
 	case "download-and-install": {
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
-		const lancache = (process.argv[5] == "--lancache");
+		const args = parseArguments(3, ["--lancache"]);
+		const [depotId, manifestId] = args;
 		if (!depotId || !manifestId) {
 			console.log("Syntax: mango download-and-install <depot id> <manifest id> [--lancache]");
 			process.exit(1);
@@ -198,7 +210,7 @@ switch (tool) {
 		const ContentManifest = require("steam-user/components/content_manifest");
 		const { DEFAULT_HOSTS, fetchManifest, fetchDepotKey, downloadAndInstall }  = require("./lib.js");
 
-		const hosts = lancache ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
+		const hosts = args["--lancache"] ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
 
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
@@ -225,9 +237,8 @@ switch (tool) {
 	} break;
 
 	case "to-json": {
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
-		const noDecrypt = (process.argv[5] == "--no-decrypt");
+		const args = parseArguments(3, ["--no-decrypt"]);
+		const [depotId, manifestId] = args;
 		if (!depotId || !manifestId) {
 			console.log("Syntax: mango to-json <depot id> <manifest id> [--no-decrypt]");
 			process.exit(1);
@@ -239,7 +250,7 @@ switch (tool) {
 
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
-			if (manifest.filenames_encrypted && !noDecrypt) {
+			if (manifest.filenames_encrypted && !args["--no-decrypt"]) {
 				console.log("Fetching depot key to decrypt filenames...");
 				const depotKey = await fetchDepotKey(manifest.depot_id);
 				ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex")); // Sets filenames_encrypted to false
