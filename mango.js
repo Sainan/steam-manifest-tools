@@ -179,8 +179,9 @@ switch (tool) {
 	case "install": {
 		const depotId = process.argv[3];
 		const manifestId = process.argv[4];
+		const installDir = process.argv[5];
 		if (!depotId || !manifestId) {
-			console.log("Syntax: mango install <depot id> <manifest id>");
+			console.log("Syntax: mango install <depot id> <manifest id> [install dir]");
 			process.exit(1);
 		}
 
@@ -192,7 +193,7 @@ switch (tool) {
 			console.log(`Fetching depot key...`);
 			let depotKey = await fetchDepotKey(manifest.depot_id);
 			depotKey = Buffer.from(depotKey, "hex");
-			await install(manifest, depotKey, undefined, (file, existed) => {
+			await install(manifest, depotKey, installDir, (file, existed) => {
 				console.log(`${existed ? "Repaired" : "Created"} ${file}`);
 			});
 			process.exit(0);
@@ -201,9 +202,9 @@ switch (tool) {
 
 	case "download-and-install": {
 		const args = parseArguments(3, ["--lancache"]);
-		const [depotId, manifestId] = args;
+		const [depotId, manifestId, installDir] = args;
 		if (!depotId || !manifestId) {
-			console.log("Syntax: mango download-and-install <depot id> <manifest id> [--lancache]");
+			console.log("Syntax: mango download-and-install <depot id> <manifest id> [install dir] [--lancache]");
 			process.exit(1);
 		}
 
@@ -219,9 +220,6 @@ switch (tool) {
 			let depotKey = await fetchDepotKey(manifest.depot_id);
 			depotKey = Buffer.from(depotKey, "hex");
 
-			ContentManifest.decryptFilenames(manifest, depotKey);
-			const installDir = `install/${manifest.depot_id}/${manifest.gid_manifest}`;
-
 			await downloadAndInstall(
 				manifest,
 				depotKey,
@@ -229,7 +227,8 @@ switch (tool) {
 				(path, host) => { console.log(`${path}: Downloading from ${host}`); },
 				(path, status, host) => { console.log(`${path}: Got ${status/*} from ${host*/}`); },
 				(path, err) => { console.log(`${path}: `, err); },
-				hosts
+				hosts,
+				installDir
 			);
 
 			process.exit(0);
