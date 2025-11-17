@@ -53,9 +53,8 @@ switch (tool) {
 		const depotId = process.argv[3];
 		const manifestId = process.argv[4];
 		const installDir = process.argv[5];
-		let depotKey = process.argv[6];
 		if (!depotId || !manifestId || !installDir) {
-			console.log("Syntax: mango populate-chunks <depot id> <manifest id> <install dir> [depot key]");
+			console.log("Syntax: mango populate-chunks <depot id> <manifest id> <install dir>");
 			process.exit(1);
 		}
 
@@ -64,10 +63,8 @@ switch (tool) {
 
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
-			if (!depotKey) {
-				console.log(`Depot key was not supplied, attempting to fetch it...`);
-				depotKey = await fetchDepotKey(manifest.depot_id);
-			}
+			console.log(`Fetching depot key...`);
+			let depotKey = await fetchDepotKey(manifest.depot_id);
 			depotKey = Buffer.from(depotKey, "hex");
 			await populateChunks(manifest, depotKey, installDir, (file, file_i, num_files, chunk_i, num_chunks) => {
 				if (chunk_i == 0) {
@@ -169,9 +166,8 @@ switch (tool) {
 	case "install": {
 		const depotId = process.argv[3];
 		const manifestId = process.argv[4];
-		let depotKey = process.argv[5];
 		if (!depotId || !manifestId) {
-			console.log("Syntax: mango install <depot id> <manifest id> [depot key]");
+			console.log("Syntax: mango install <depot id> <manifest id>");
 			process.exit(1);
 		}
 
@@ -180,10 +176,8 @@ switch (tool) {
 
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
-			if (!depotKey) {
-				console.log(`Depot key was not supplied, attempting to fetch it...`);
-				depotKey = await fetchDepotKey(manifest.depot_id);
-			}
+			console.log(`Fetching depot key...`);
+			let depotKey = await fetchDepotKey(manifest.depot_id);
 			depotKey = Buffer.from(depotKey, "hex");
 			await install(manifest, depotKey, undefined, (file, existed) => {
 				console.log(`${existed ? "Repaired" : "Created"} ${file}`);
@@ -195,15 +189,10 @@ switch (tool) {
 	case "download-and-install": {
 		const depotId = process.argv[3];
 		const manifestId = process.argv[4];
-		let depotKey = process.argv[5];
-		let lancache = (process.argv[6] == "--lancache");
+		const lancache = (process.argv[5] == "--lancache");
 		if (!depotId || !manifestId) {
-			console.log("Syntax: mango download-and-install <depot id> <manifest id> [depot key] [--lancache]");
+			console.log("Syntax: mango download-and-install <depot id> <manifest id> [--lancache]");
 			process.exit(1);
-		}
-		if (depotKey == "--lancache") {
-			depotKey = undefined;
-			lancache = true;
 		}
 
 		const ContentManifest = require("steam-user/components/content_manifest");
@@ -213,10 +202,9 @@ switch (tool) {
 
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
-			if (!depotKey) {
-				console.log(`Depot key was not supplied, attempting to fetch it...`);
-				depotKey = await fetchDepotKey(manifest.depot_id);
-			}
+
+			console.log(`Fetching depot key...`);
+			let depotKey = await fetchDepotKey(manifest.depot_id);
 			depotKey = Buffer.from(depotKey, "hex");
 
 			ContentManifest.decryptFilenames(manifest, depotKey);
@@ -239,9 +227,9 @@ switch (tool) {
 	case "to-json": {
 		const depotId = process.argv[3];
 		const manifestId = process.argv[4];
-		let depotKey = process.argv[5];
+		const noDecrypt = (process.argv[5] == "--no-decrypt");
 		if (!depotId || !manifestId) {
-			console.log("Syntax: mango to-json <depot id> <manifest id> [depot key|--no-decrypt]");
+			console.log("Syntax: mango to-json <depot id> <manifest id> [--no-decrypt]");
 			process.exit(1);
 		}
 
@@ -251,12 +239,9 @@ switch (tool) {
 
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
-			if (manifest.filenames_encrypted && depotKey != "--no-decrypt") {
-				if (!depotKey) {
-					console.log("Manifest has encrypted filenames and --no-decrypt was not specified. A depot key will be needed.");
-					console.log(`Depot key was not supplied, attempting to fetch it...`);
-					depotKey = await fetchDepotKey(manifest.depot_id);
-				}
+			if (manifest.filenames_encrypted && !noDecrypt) {
+				console.log("Fetching depot key to decrypt filenames...");
+				const depotKey = await fetchDepotKey(manifest.depot_id);
 				ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex")); // Sets filenames_encrypted to false
 				//manifest.filenames_decrypted = true; // Indicate that this transformation took place in the JSON export // Kinda pointless because some .manifest files are already decrypted by their sources
 			}
@@ -270,9 +255,8 @@ switch (tool) {
 	case "to-hashdeep-auditfile": {
 		const depotId = process.argv[3];
 		const manifestId = process.argv[4];
-		let depotKey = process.argv[5];
 		if (!depotId || !manifestId) {
-			console.log("Syntax: mango to-hashdeep-auditfile <depot id> <manifest id> [depot key]");
+			console.log("Syntax: mango to-hashdeep-auditfile <depot id> <manifest id>");
 			process.exit(1);
 		}
 
@@ -284,11 +268,8 @@ switch (tool) {
 		(async () => {
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 			if (manifest.filenames_encrypted) {
-				if (!depotKey) {
-					console.log("Manifest has encrypted filenames. A depot key will be needed.");
-					console.log(`Depot key was not supplied, attempting to fetch it...`);
-					depotKey = await fetchDepotKey(manifest.depot_id);
-				}
+				console.log("Manifest has encrypted filenames. Fetching depot key...");
+				const depotKey = await fetchDepotKey(manifest.depot_id);
 				ContentManifest.decryptFilenames(manifest, Buffer.from(depotKey, "hex"));
 			}
 
@@ -367,18 +348,15 @@ switch (tool) {
 
 	case "verify-chunks": {
 		const depotId = process.argv[3];
-		let depotKey = process.argv[4];
 		if (!depotId) {
-			console.log("Syntax: mango verify-chunks <depot id> [depot key]");
+			console.log("Syntax: mango verify-chunks <depot id>");
 			process.exit(1);
 		}
 
 		const { fetchDepotKey, verifyChunks } = require("./lib.js");
 		(async () => {
-			if (!depotKey) {
-				console.log(`Depot key was not supplied, attempting to fetch it...`);
-				depotKey = await fetchDepotKey(depotId);
-			}
+			console.log(`Fetching depot key...`);
+			let depotKey = await fetchDepotKey(depotId);
 			depotKey = Buffer.from(depotKey, "hex");
 			console.log(`Verifying chunks...`);
 			await verifyChunks(depotId, depotKey, (file, expectedHash) => {
