@@ -376,11 +376,15 @@ module.exports = {
 		const ioLoop = async () => {
 			ioLoopRunning = true;
 			while (ioQueue.length > 0) {
-				const chunkSha = ioQueue.shift();
-				const data = await getChunk(depotId, depotKey, chunkSha);
+				const completedChunks = {};
+				for (let i = 0; ioQueue.length > 0 && i != 100; ++i) {
+					const chunkSha = ioQueue.shift();
+					completedChunks[chunkSha] = getChunk(depotId, depotKey, chunkSha);
+				}
 				for (const file of manifest.files) {
 					for (const chunk of file.chunks) {
-						if (chunk.sha == chunkSha) {
+						if (chunk.sha in completedChunks) {
+							const data = await completedChunks[chunk.sha];
 							await writeStreams[file.filename].write(data, 0, data.byteLength, parseInt(chunk.offset));
 						}
 					}
