@@ -1,7 +1,8 @@
-const crypto = require("crypto");
-const fs = require("fs");
-const fsPromises = require("fs/promises");
-const path = require("path");
+const crypto = require("node:crypto");
+const fs = require("node:fs");
+const fsPromises = require("node:fs/promises");
+const path = require("node:path");
+const worker_threads = require("node:worker_threads");
 const AdmZip = require("adm-zip");
 const CdnCompression = require("steam-user/components/cdn_compression");
 const ContentManifest = require("steam-user/components/content_manifest");
@@ -29,6 +30,85 @@ const DEFAULT_HOSTS = [
 	"https://fastly.cdn.steampipe.steamcontent.com",
 	"https://google2.cdn.steampipe.steamcontent.com",
 ];
+
+const workers = [];
+
+const getAvailableWorker = () => {
+	const w = workers.find(x => !x.busy);
+	if (w) {
+		//console.log(`Found an idle worker`);
+		w.busy = true;
+		return Promise.resolve(w);
+	}
+	if (workers.length < 8) {
+		//console.log(`Creating a new worker`);
+		const w = {
+			inst: new worker_threads.Worker(__filename),
+			busy: true,
+		}
+		w.inst.on("message", (x) => {
+			w.busy = false;
+			w.resolve(x);
+		});
+		w.inst.on("error", (x) => {
+			w.busy = false;
+			w.reject(x);
+		});
+		w.inst.on("exit", (code) => {
+			console.log(`Worker exited with code ${code}`);
+			workers.splice(workers.indexOf(w), 1);
+		});
+		workers.push(w);
+		return Promise.resolve(w);
+	}
+	//console.log("All workers busy, waiting");
+	return new Promise(resolve => {
+		let i;
+		i = setInterval(() => {
+			const w = workers.find(x => !x.busy);
+			if (w) {
+				w.busy = true;
+				clearInterval(i);
+				resolve(w);
+			}
+		}, 4);
+	});
+};
+
+const doJobInWorker = (job) => {
+	return new Promise((resolve, reject) => {
+		getAvailableWorker().then((w) => {
+			w.resolve = resolve;
+			w.reject = reject;
+			w.inst.postMessage(job);
+		});
+	});
+};
+
+if (!worker_threads.isMainThread) {
+	worker_threads.parentPort.on("message", (job) => {
+		if ("getChunk" in job) {
+			(async () => {
+				const [ depotId, depotKey, hash ] = job.getChunk;
+				try {
+					let data = await getFileContents(`depot/${depotId}/chunk/${hash}`);
+					data = SteamCrypto.symmetricDecrypt(data, depotKey);
+					data = await CdnCompression.unzip(data);
+					if (sha1(data) != hash) {
+						throw new Error(`depot/${depotId}/chunk/${hash} does not match the expected hash`);
+					}
+					worker_threads.parentPort.postMessage(data);
+				}
+				catch (e) {
+					if (e.code == "ENOENT") {
+						throw new Error(`depot/${depotId}/chunk/${hash} is missing`);
+					}
+					throw e;
+				}
+			})();
+		}
+	});
+}
 
 const sha1 = (data) => crypto.createHash("sha1").update(data).digest("hex");
 
@@ -74,22 +154,10 @@ const getFileContents = async (file) => {
 	}
 };
 
-const getChunk = async (depotId, depotKey, hash) => {
-	try {
-		let data = await getFileContents(`depot/${depotId}/chunk/${hash}`);
-		data = SteamCrypto.symmetricDecrypt(data, depotKey);
-		data = await CdnCompression.unzip(data);
-		if (sha1(data) != hash) {
-			throw new Error(`depot/${depotId}/chunk/${hash} does not match the expected hash`);
-		}
-		return data;
-	}
-	catch (e) {
-		if (e.code == "ENOENT") {
-			throw new Error(`depot/${depotId}/chunk/${hash} is missing`);
-		}
-		throw e;
-	}
+const getChunk = (depotId, depotKey, hash) => {
+	return doJobInWorker({
+		getChunk: [ depotId, depotKey, hash ]
+	});
 };
 
 const downloadChunks = (manifest, onStartDownloading, onStartDownload, onFinishDownload, onErroredDownload, hosts) => {
