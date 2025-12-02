@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const fsPromises = require("node:fs/promises");
+const os = require("node:os");
 const path = require("node:path");
 const worker_threads = require("node:worker_threads");
 const AdmZip = require("adm-zip");
@@ -31,6 +32,8 @@ const DEFAULT_HOSTS = [
 	"https://google2.cdn.steampipe.steamcontent.com",
 ];
 
+const MAX_WORKERS = Math.ceil(os.cpus().length / 2);
+
 const workers = [];
 
 const getAvailableWorker = () => {
@@ -40,7 +43,7 @@ const getAvailableWorker = () => {
 		w.busy = true;
 		return Promise.resolve(w);
 	}
-	if (workers.length < 8) {
+	if (workers.length < MAX_WORKERS) {
 		//console.log(`Creating a new worker`);
 		const w = {
 			inst: new worker_threads.Worker(__filename),
