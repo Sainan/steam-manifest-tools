@@ -95,7 +95,7 @@ if (!worker_threads.isMainThread) {
 					data = SteamCrypto.symmetricDecrypt(data, depotKey);
 					data = await CdnCompression.unzip(data);
 					if (sha1(data) != hash) {
-						throw new Error(`depot/${depotId}/chunk/${hash} does not match the expected hash`);
+						throw new Error(`Hash mismatch`);
 					}
 					worker_threads.parentPort.postMessage(data);
 				}
@@ -103,7 +103,7 @@ if (!worker_threads.isMainThread) {
 					if (e.code == "ENOENT") {
 						throw new Error(`depot/${depotId}/chunk/${hash} is missing`);
 					}
-					throw e;
+					throw new Error(`depot/${depotId}/chunk/${hash} seems to have a problem: ${e.message}`);
 				}
 			})();
 		}
