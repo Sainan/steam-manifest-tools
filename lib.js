@@ -435,25 +435,23 @@ module.exports = {
 		let promises = [];
 		for (const file of files) {
 			const hash = file.substr(file.length - 40);
-			if (promises.length > 40) {
+			if (promises.length > 100) {
 				await Promise.all(promises);
 				promises = [];
 			}
-			promises.push(getFileContents(file).then(async data => {
+			promises.push((async () => {
 				try {
-					data = SteamCrypto.symmetricDecrypt(data, depotKey);
-					data = await CdnCompression.unzip(data);
-					if (sha1(data) == hash) {
-						return;
-					}
+					await getChunk(depotId, depotKey, hash);
+					return;
 				}
 				catch (e) {
+					//console.log(e);
 				}
 				await fsPromises.unlink(file);
 				if (onDeletedFile) {
 					onDeletedFile(file, hash);
 				}
-			}));
+			})());
 		}
 		await Promise.all(promises);
 	},
