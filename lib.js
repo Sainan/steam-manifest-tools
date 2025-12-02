@@ -91,7 +91,7 @@ if (!worker_threads.isMainThread) {
 			(async () => {
 				const [ depotId, depotKey, hash ] = job.getChunk;
 				try {
-					let data = await getFileContents(`depot/${depotId}/chunk/${hash}`);
+					let data = fs.readFileSync(`depot/${depotId}/chunk/${hash}`);
 					data = SteamCrypto.symmetricDecrypt(data, depotKey);
 					data = await CdnCompression.unzip(data);
 					if (sha1(data) != hash) {
