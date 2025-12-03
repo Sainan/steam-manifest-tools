@@ -2,8 +2,13 @@ const parseArguments = (base, bools = []) => {
 	const res = [];
 	let j = 0;
 	for (let i = base; i != process.argv.length; ++i) {
-		if (bools.indexOf(process.argv[i]) != -1) {
-			res[process.argv[i]] = true;
+		if (process.argv[i].startsWith("--")) {
+			if (bools.indexOf(process.argv[i]) != -1) {
+				res[process.argv[i]] = true;
+			}
+			else {
+				console.log(`Ignoring unknown argument: ${process.argv[i]}`);
+			}
 		}
 		else {
 			res[j++] = process.argv[i];
@@ -20,8 +25,7 @@ switch (tool) {
 	} break;
 
 	case "download-manifest": { // No need to use this manually as all commands that need a manifest will fetch it on demand.
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
+		const [depotId, manifestId] = parseArguments(3);
 		if (!depotId || !manifestId) {
 			console.log("Syntax: mango download-manifest <depot id> <manifest id>");
 			process.exit(1);
@@ -63,9 +67,7 @@ switch (tool) {
 	} break;
 
 	case "populate-chunks": {
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
-		const installDir = process.argv[5];
+		const [depotId, manifestId, installDir] = parseArguments(3);
 		if (!depotId || !manifestId || !installDir) {
 			console.log("Syntax: mango populate-chunks <depot id> <manifest id> <install dir>");
 			process.exit(1);
@@ -177,9 +179,7 @@ switch (tool) {
 	} break;
 
 	case "install": {
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
-		const installDir = process.argv[5];
+		const [depotId, manifestId, installDir] = parseArguments(3);
 		if (!depotId || !manifestId) {
 			console.log("Syntax: mango install <depot id> <manifest id> [install dir]");
 			process.exit(1);
@@ -274,8 +274,7 @@ switch (tool) {
 	} break;
 
 	case "to-hashdeep-auditfile": {
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
+		const [depotId, manifestId] = parseArguments(3);
 		if (!depotId || !manifestId) {
 			console.log("Syntax: mango to-hashdeep-auditfile <depot id> <manifest id>");
 			process.exit(1);
@@ -312,9 +311,7 @@ switch (tool) {
 	} break;
 
 	case "to-torrent": {
-		const depotId = process.argv[3];
-		const manifestId = process.argv[4];
-		const fileHash = process.argv[5];
+		const [depotId, manifestId, fileHash] = parseArguments(3);
 		if (!depotId || !manifestId || !fileHash) {
 			console.log("Syntax: mango to-torrent <depot id> <manifest id> <file hash>");
 			process.exit(1);
@@ -368,7 +365,7 @@ switch (tool) {
 	} break;
 
 	case "verify-chunks": {
-		const depotId = process.argv[3];
+		const [depotId] = parseArguments(3);
 		if (!depotId) {
 			console.log("Syntax: mango verify-chunks <depot id>");
 			process.exit(1);
