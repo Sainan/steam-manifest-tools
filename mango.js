@@ -220,12 +220,23 @@ switch (tool) {
 			let depotKey = await fetchDepotKey(manifest.depot_id);
 			depotKey = Buffer.from(depotKey, "hex");
 
+			let remaining_chunks;
 			await downloadAndInstall(
 				manifest,
 				depotKey,
-				undefined /*(num_chunks) => {}*/,
+				(num_chunks) => {
+					remaining_chunks = num_chunks;
+					if (remaining_chunks == 0) {
+						console.log("Done with downloading. Installing may still take a bit.");
+					}
+				},
 				(path, host) => { console.log(`${path}: Downloading from ${host}`); },
-				(path, status, host) => { console.log(`${path}: Got ${status/*} from ${host*/}`); },
+				(path, status, host) => {
+					console.log(`${path}: Got ${status/*} from ${host*/}`);
+					if (status == 200 && --remaining_chunks == 0) {
+						console.log("Done with downloading. Installing may still take a bit.");
+					}
+				},
 				(path, err) => { console.log(`${path}: `, err); },
 				hosts,
 				installDir
