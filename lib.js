@@ -132,7 +132,7 @@ const compress = (buf) => {
 	return zip.toBuffer();
 };
 
-// https://stackoverflow.com/a/45130990
+// deprecated
 const getFiles = async (dir) => {
 	const dirents = await fsPromises.readdir(dir, { withFileTypes: true });
 	const files = await Promise.all(dirents.map((dirent) => {
@@ -142,6 +142,7 @@ const getFiles = async (dir) => {
 	return Array.prototype.concat(...files);
 };
 
+// deprecated
 const getFileContents = async (file) => {
 	while (true) {
 		try {
@@ -446,7 +447,7 @@ module.exports = {
 		}
 	},
 	verifyChunks: async (depotId, depotKey, onDeletedFile) => {
-		const files = await getFiles(`depot/${depotId}/chunk`);
+		const files = await fsPromises.readdir(`depot/${depotId}/chunk`);
 		let promises = [];
 		for (const file of files) {
 			const hash = file.substr(file.length - 40);
