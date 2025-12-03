@@ -230,6 +230,43 @@ const downloadChunks = (manifest, onStartDownloading, onStartDownload, onFinishD
 	});
 };
 
+const install = async (manifest, depotKey, installDir, onFileWritten) => {
+	ContentManifest.decryptFilenames(manifest, depotKey);
+	installDir ??= `install/${manifest.depot_id}/${manifest.gid_manifest}`;
+	await fsPromises.mkdir(installDir, { recursive: true });
+	for (const file of manifest.files) {
+		const filename = file.filename.replace(/\\/g, "/");
+		if (file.flags & 64) {
+			await fsPromises.mkdir(path.join(installDir, filename), { recursive: true });
+			continue;
+		}
+		const exists = fs.existsSync(path.join(installDir, filename));
+		if (!exists || await sha1file(path.join(installDir, filename)) != file.sha_content) {
+			for (const chunk of file.chunks) {
+				chunk.offset = parseInt(chunk.offset);
+			}
+			file.chunks.sort((a, b) => a.offset - b.offset);
+
+			await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
+			const writeStream = await fsPromises.open(path.join(installDir, filename), "w");
+			for (let i = 0; i != file.chunks.length; ) {
+				const j = Math.min(i + 100, file.chunks.length);
+				const promises = [];
+				for (; i != j; ++i) {
+					promises.push(getChunk(manifest.depot_id, depotKey, file.chunks[i].sha));
+				}
+				for (const p of promises) {
+					await writeStream.write(await p);
+				}
+			}
+			await writeStream.close();
+			if (onFileWritten) {
+				onFileWritten(filename, exists);
+			}
+		}
+	}
+};
+
 module.exports = {
 	DEFAULT_HOSTS,
 	sha1,
@@ -319,42 +356,7 @@ module.exports = {
 		}
 	},
 	downloadChunks,
-	install: async (manifest, depotKey, installDir, onFileWritten) => {
-		ContentManifest.decryptFilenames(manifest, depotKey);
-		installDir ??= `install/${manifest.depot_id}/${manifest.gid_manifest}`;
-		await fsPromises.mkdir(installDir, { recursive: true });
-		for (const file of manifest.files) {
-			const filename = file.filename.replace(/\\/g, "/");
-			if (file.flags & 64) {
-				await fsPromises.mkdir(path.join(installDir, filename), { recursive: true });
-				continue;
-			}
-			const exists = fs.existsSync(path.join(installDir, filename));
-			if (!exists || await sha1file(path.join(installDir, filename)) != file.sha_content) {
-				for (const chunk of file.chunks) {
-					chunk.offset = parseInt(chunk.offset);
-				}
-				file.chunks.sort((a, b) => a.offset - b.offset);
-
-				await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
-				const writeStream = await fsPromises.open(path.join(installDir, filename), "w");
-				for (let i = 0; i != file.chunks.length; ) {
-					const j = Math.min(i + 100, file.chunks.length);
-					const promises = [];
-					for (; i != j; ++i) {
-						promises.push(getChunk(manifest.depot_id, depotKey, file.chunks[i].sha));
-					}
-					for (const p of promises) {
-						await writeStream.write(await p);
-					}
-				}
-				await writeStream.close();
-				if (onFileWritten) {
-					onFileWritten(filename, exists);
-				}
-			}
-		}
-	},
+	install,
 	downloadAndInstall: async (manifest, depotKey, onStartDownloading, onStartDownload, onFinishDownload, onErroredDownload, hosts, installDir) => {
 		const depotId = manifest.depot_id;
 
@@ -402,11 +404,17 @@ module.exports = {
 			}
 		};
 
+		let just_do_an_install = false;
 		await downloadChunks(
 			manifest,
 			(num_chunks, alreadyDownloaded) => {
-				for (const path of alreadyDownloaded) {
-					ioAddPath(path);
+				if (num_chunks == 0) {
+					just_do_an_install = true;
+				}
+				else {
+					for (const path of alreadyDownloaded) {
+						ioAddPath(path);
+					}
 				}
 				if (onStartDownloading) {
 					onStartDownloading(num_chunks);
@@ -431,6 +439,10 @@ module.exports = {
 
 		for (const writeStream of Object.values(writeStreams)) {
 			await writeStream.close();
+		}
+
+		if (just_do_an_install) {
+			await install(manifest, depotKey, installDir);
 		}
 	},
 	verifyChunks: async (depotId, depotKey, onDeletedFile) => {
