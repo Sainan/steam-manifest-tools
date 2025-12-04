@@ -73,7 +73,7 @@ const getAvailableWorker = () => {
 				clearInterval(i);
 				resolve(w);
 			}
-		}, 4);
+		}, 15);
 	});
 };
 
