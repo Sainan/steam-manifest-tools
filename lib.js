@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const worker_threads = require("node:worker_threads");
 const AdmZip = require("adm-zip");
-const ContentManifest = require("steam-user/components/content_manifest");
+const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 const SteamCrypto = require("@doctormckay/steam-crypto");
 
 const DEFAULT_HOSTS = [
@@ -88,7 +88,7 @@ const doJobInWorker = (job) => {
 };
 
 if (!worker_threads.isMainThread) {
-	const CdnCompression = require("steam-user/components/cdn_compression");
+	const CdnCompression = require("lean-and-mean-steam-user/components/cdn_compression");
 
 	worker_threads.parentPort.on("message", (job) => {
 		if ("getChunk" in job) {

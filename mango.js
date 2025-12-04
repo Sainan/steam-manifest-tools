@@ -47,7 +47,7 @@ switch (tool) {
 			process.exit(1);
 		}
 
-		const ContentManifest = require("steam-user/components/content_manifest");
+		const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 		const { DEFAULT_HOSTS, fetchManifest, downloadChunks } = require("./lib.js");
 
 		const hosts = args["--lancache"] ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
@@ -73,7 +73,7 @@ switch (tool) {
 			process.exit(1);
 		}
 
-		const ContentManifest = require("steam-user/components/content_manifest");
+		const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 		const { fetchManifest, fetchDepotKey, populateChunks } = require("./lib.js");
 
 		(async () => {
@@ -185,7 +185,7 @@ switch (tool) {
 			process.exit(1);
 		}
 
-		const ContentManifest = require("steam-user/components/content_manifest");
+		const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 		const { fetchManifest, fetchDepotKey, install }  = require("./lib.js");
 
 		(async () => {
@@ -208,7 +208,7 @@ switch (tool) {
 			process.exit(1);
 		}
 
-		const ContentManifest = require("steam-user/components/content_manifest");
+		const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 		const { DEFAULT_HOSTS, fetchManifest, fetchDepotKey, downloadAndInstall }  = require("./lib.js");
 
 		const hosts = args["--lancache"] ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
@@ -255,7 +255,7 @@ switch (tool) {
 		}
 
 		const fs = require("fs");
-		const ContentManifest = require("steam-user/components/content_manifest");
+		const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 		const { fetchManifest, fetchDepotKey }  = require("./lib.js");
 
 		(async () => {
@@ -282,7 +282,7 @@ switch (tool) {
 
 		const fs = require("fs");
 		const path = require("path");
-		const ContentManifest = require("steam-user/components/content_manifest");
+		const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 		const { fetchManifest, fetchDepotKey }  = require("./lib.js");
 
 		(async () => {
@@ -317,7 +317,7 @@ switch (tool) {
 			process.exit(1);
 		}
 
-		const ContentManifest = require("steam-user/components/content_manifest");
+		const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
 
 		function toPieces(hexArray) {
 			const bufs = hexArray.map(h => {
