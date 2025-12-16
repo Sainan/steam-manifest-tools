@@ -57,7 +57,7 @@ const getAvailableWorker = () => {
 			w.reject(x);
 		});
 		w.inst.on("exit", (code) => {
-			console.log(`Worker exited with code ${code}`);
+			//console.log(`Worker exited with code ${code}`);
 			workers.splice(workers.indexOf(w), 1);
 		});
 		workers.push(w);
@@ -450,8 +450,7 @@ module.exports = {
 	verifyChunks: async (depotId, depotKey, onDeletedFile) => {
 		const files = await fsPromises.readdir(`depot/${depotId}/chunk`);
 		let promises = [];
-		for (const file of files) {
-			const hash = file.substr(file.length - 40);
+		for (const hash of files) {
 			if (promises.length > 100) {
 				await Promise.all(promises);
 				promises = [];
@@ -464,6 +463,7 @@ module.exports = {
 				catch (e) {
 					//console.log(e);
 				}
+				const file = path.resolve(`depot/${depotId}/chunk`, hash);
 				await fsPromises.unlink(file);
 				if (onDeletedFile) {
 					onDeletedFile(file, hash);
