@@ -34,6 +34,7 @@ switch (tool) {
 		const { fetchManifest }  = require("./lib.js");
 
 		(async () => {
+			console.log(`Fetching manifest...`);
 			await fetchManifest(depotId, manifestId);
 			console.log(`Saved in manifests/${depotId}_${manifestId}.manifest`);
 		})();
@@ -53,6 +54,7 @@ switch (tool) {
 		const hosts = args["--lancache"] ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
 
 		(async () => {
+			console.log(`Fetching manifest...`);
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 			await downloadChunks(
 				manifest,
@@ -77,6 +79,7 @@ switch (tool) {
 		const { fetchManifest, fetchDepotKey, populateChunks } = require("./lib.js");
 
 		(async () => {
+			console.log(`Fetching manifest...`);
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 			console.log(`Fetching depot key...`);
 			let depotKey = await fetchDepotKey(manifest.depot_id);
@@ -189,6 +192,7 @@ switch (tool) {
 		const { fetchManifest, fetchDepotKey, install }  = require("./lib.js");
 
 		(async () => {
+			console.log(`Fetching manifest...`);
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 			console.log(`Fetching depot key...`);
 			let depotKey = await fetchDepotKey(manifest.depot_id);
@@ -214,6 +218,7 @@ switch (tool) {
 		const hosts = args["--lancache"] ? ["http://lancache.steamcontent.com"] : DEFAULT_HOSTS;
 
 		(async () => {
+			console.log(`Fetching manifest...`);
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 
 			console.log(`Fetching depot key...`);
@@ -259,6 +264,7 @@ switch (tool) {
 		const { fetchManifest, fetchDepotKey }  = require("./lib.js");
 
 		(async () => {
+			console.log(`Fetching manifest...`);
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 			if (manifest.filenames_encrypted && !args["--no-decrypt"]) {
 				console.log("Fetching depot key to decrypt filenames...");
@@ -286,6 +292,7 @@ switch (tool) {
 		const { fetchManifest, fetchDepotKey }  = require("./lib.js");
 
 		(async () => {
+			console.log(`Fetching manifest...`);
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 			if (manifest.filenames_encrypted) {
 				console.log("Manifest has encrypted filenames. Fetching depot key...");
@@ -331,6 +338,7 @@ switch (tool) {
 
 		(async () => {
 			const { fetchManifest } = require("./lib.js");
+			console.log(`Fetching manifest...`);
 			const manifest = ContentManifest.parse(await fetchManifest(depotId, manifestId));
 			const file = manifest.files.find(x => x.sha_content == fileHash);
 			if (!file) {
