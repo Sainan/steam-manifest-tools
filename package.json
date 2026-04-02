@@ -1,6 +1,6 @@
 {
   "name": "steam-manifest-tools",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "lib.js",
   "repository": {
     "type": "git",
