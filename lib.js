@@ -308,7 +308,7 @@ module.exports = {
 		catch (e) {
 			// fallthrough
 		}
-		const depotkeys = await fetch("https://raw.githubusercontent.com/SteamAutoCracks/ManifestHub/refs/heads/main/depotkeys.json").then(x => x.json());
+		const depotkeys = await fetch("https://gitlab.com/steamautocracks/manifesthub/-/raw/main/depotkeys.json").then(x => x.json());
 		if (!depotkeys[depotId]) {
 			throw new Error(`Failed to get the depot key.`);
 		}
