@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/Sainan/steam-manifest-tools.git"
   },
+  "bin": {
+    "mango": "mango.js"
+  },
   "scripts": {
     "build": "mv node_modules nm && nexe mango.js -t x64-22.21.1 --build && mv nm node_modules"
   },

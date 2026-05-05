@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const parseArguments = (base, bools = []) => {
 	const res = [];
 	let j = 0;
