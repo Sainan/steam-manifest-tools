@@ -234,14 +234,14 @@ switch (tool) {
 				(num_chunks) => {
 					remaining_chunks = num_chunks;
 					if (remaining_chunks == 0) {
-						console.log("Done with downloading. Installing may still take a bit.");
+						console.log("All chunks are downloaded. Finishing install...");
 					}
 				},
 				(path, host) => { console.log(`${path}: Downloading from ${host}`); },
 				(path, status, host) => {
 					console.log(`${path}: Got ${status/*} from ${host*/}`);
 					if (status == 200 && --remaining_chunks == 0) {
-						console.log("Done with downloading. Installing may still take a bit.");
+						console.log("All chunks are downloaded. Finishing install...");
 					}
 				},
 				(path, err) => { console.log(`${path}: `, err); },
@@ -249,6 +249,7 @@ switch (tool) {
 				installDir
 			);
 
+			console.log("Install finished.");
 			process.exit(0);
 		})();
 	} break;
