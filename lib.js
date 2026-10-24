@@ -366,15 +366,30 @@ module.exports = {
 		installDir ??= `install/${manifest.depot_id}/${manifest.gid_manifest}`;
 
 		const writeStreams = {};
-		for (const file of manifest.files) {
-			const filename = file.filename.replace(/\\/g, "/");
-			if (file.flags & 64) {
-				await fsPromises.mkdir(path.join(installDir, filename), { recursive: true });
+		try {
+			for (const file of manifest.files) {
+				const filename = file.filename.replace(/\\/g, "/");
+				if (file.flags & 64) {
+					await fsPromises.mkdir(path.join(installDir, filename), { recursive: true });
+				}
+				else {
+					await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
+					writeStreams[file.filename] = await fsPromises.open(path.join(installDir, filename), "w");
+				}
 			}
-			else {
-				await fsPromises.mkdir(path.dirname(path.join(installDir, filename)), { recursive: true });
-				writeStreams[file.filename] = await fsPromises.open(path.join(installDir, filename), "w");
+		}
+		catch (e) {
+			for (const writeStream of Object.values(writeStreams)) {
+				await writeStream.close();
 			}
+			if (e.code != "EMFILE") {
+				throw e;
+			}
+			// Too many files are open at once to hold a write handle for every file in the manifest.
+			// Fall back to downloading all chunks first, then installing one file at a time.
+			await downloadChunks(manifest, onStartDownloading, onStartDownload, onFinishDownload, onErroredDownload, hosts);
+			await install(manifest, depotKey, installDir);
+			return;
 		}
 
 		const ioQueue = [];
