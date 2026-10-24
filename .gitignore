@@ -3,5 +3,7 @@ depot/
 install/
 node_modules/
 *.json
+!package.json
+!package-lock.json
 *.auditfile
 mango.exe
