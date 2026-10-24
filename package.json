@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@doctormckay/steam-crypto": "^1.2.0",
-    "adm-zip": "^0.5.16",
-    "lean-and-mean-steam-user": "^0.1.0"
+    "adm-zip": "^0.6.0",
+    "lean-and-mean-steam-user": "^0.1.1"
   },
   "devDependencies": {
     "express": "^5.1.0",
