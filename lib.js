@@ -6,7 +6,7 @@ const path = require("node:path");
 const worker_threads = require("node:worker_threads");
 const AdmZip = require("adm-zip");
 const ContentManifest = require("lean-and-mean-steam-user/components/content_manifest");
-const SteamCrypto = require("@doctormckay/steam-crypto");
+const SteamCrypto = require("lean-and-mean-steam-user/components/steam-crypto");
 
 const DEFAULT_HOSTS = [
 	"https://cache8-sto1.steamcontent.com",

@@ -13,9 +13,8 @@
     "build": "mv node_modules nm && nexe mango.js -t x64-22.21.1 --build && mv nm node_modules"
   },
   "dependencies": {
-    "@doctormckay/steam-crypto": "^1.2.0",
     "adm-zip": "^0.6.0",
-    "lean-and-mean-steam-user": "^0.1.1"
+    "lean-and-mean-steam-user": "^0.1.2"
   },
   "devDependencies": {
     "express": "^5.1.0",
